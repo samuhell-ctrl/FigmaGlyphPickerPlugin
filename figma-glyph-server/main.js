@@ -1,4 +1,4 @@
-const { app, Tray, Menu } = require('electron');
+const { app, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const { startServer, stopServer } = require('./server');
 const { autoUpdater } = require('electron-updater');
@@ -15,35 +15,36 @@ async function createTrayAndServer() {
     console.error('Failed to start Express server:', err);
   }
 
-  const iconPath = path.join(__dirname, 'icon.png'); // Provide your own icon file
+  // 1. Load the image
+  const iconPath = path.join(__dirname, 'icon.png'); 
+  let icon = nativeImage.createFromPath(iconPath);
+
+  // 2. Resize and crop so the tray icon is a compact square that matches the menu bar height.
+  const targetSize = 18; // roughly the macOS menu bar icon height
+  icon = icon.resize({ height: targetSize });
+
+  // If the source image is wide, crop it to a centered square so it doesn't take extra width
+  const size = icon.getSize();
+  if (size.width > size.height) {
+    const x = Math.floor((size.width - size.height) / 2);
+    icon = icon.crop({ x, y: 0, width: size.height, height: size.height });
+  }
+
+  // 'isTemplate: true' lets macOS handle dark/light mode automatically
+  icon.setTemplateImage(true);
+
   try {
-    tray = new Tray(iconPath);
+    // 3. Create the tray with the resized icon
+    tray = new Tray(icon);
   } catch (e) {
-    console.warn('Tray icon could not be created, falling back to app without tray.', e);
+    console.warn('Tray icon could not be created', e);
     return;
   }
 
+  // ... rest of your contextMenu code
   const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Status: Running on Port 3000',
-      enabled: false,
-    },
-    {
-      label: 'Quit',
-      click: async () => {
-        if (quitting) return;
-        quitting = true;
-        try {
-          if (serverStarted) {
-            await stopServer();
-          }
-        } catch (err) {
-          console.error('Error while stopping Express server:', err);
-        } finally {
-          app.quit();
-        }
-      },
-    },
+    { label: 'Status: Running on Port 3000', enabled: false },
+    { label: 'Quit', click: () => app.quit() }
   ]);
 
   tray.setToolTip('Figma Glyph Font Server');

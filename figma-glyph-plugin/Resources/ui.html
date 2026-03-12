@@ -460,6 +460,9 @@
         <div class="update-label">Update V<span id="update-version">1.0.0</span></div>
         <a href="#" id="update-link" target="_blank" class="update-link">Download update</a>
       </div>
+
+      <div id="Dev-mode-row"><div class="Dev-mode-label">Dev mode</div> <!-- Comment out dev mode here -->
+    
     <div id="theme-row">
       <div class="theme-label">Toggle theme</div>
       <button id="theme-switch" role="switch">
@@ -496,12 +499,26 @@
     <div id="status-text"></div>
 
     <div id="glyph-grid"></div>
+
+    <div id="stylistic-sets-panel" style="margin-top: 0.75rem; display: none;">
+      <div id="stylistic-sets-header" class="header-label" style="margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center;">
+        <span>Stylistic Sets</span>
+        <span id="stylistic-sets-hint" style="font-weight: var(--font-weight-dynamic); opacity: 0.7;"></span>
+      </div>
+      <div id="stylistic-sets-content"></div>
+    </div>
   </div>
 
   <script>
     let allGlyphs = [];
     let currentFontFamily = '';
     let currentFontStyle = '';
+    let stylisticSets = {};
+    let selectedChar = null;
+    let cursorPosition = null;
+    let selectionStart = null;
+    let selectionEnd = null;
+    let isEditing = false;
 
     const statusDiv = document.getElementById('status-text');
     const grid = document.getElementById('glyph-grid');
@@ -509,6 +526,9 @@
     const fontStyleDiv = document.getElementById('font-style');
     const glyphCountSpan = document.getElementById('glyph-count');
     const searchInput = document.getElementById('search-input');
+    const stylisticPanel = document.getElementById('stylistic-sets-panel');
+    const stylisticHeaderHint = document.getElementById('stylistic-sets-hint');
+    const stylisticContent = document.getElementById('stylistic-sets-content');
 
     // --- NEW: Smart Screen Size Breakpoints ---
     // --- NEW: Smart Retina/Screen Breakpoints for Grid Columns ---
@@ -627,6 +647,109 @@
       });
     }
 
+    function renderStylisticSets() {
+      stylisticContent.innerHTML = '';
+
+      const tags = Object.keys(stylisticSets || {});
+      if (!tags.length) {
+        stylisticPanel.style.display = 'none';
+        return;
+      }
+
+      stylisticPanel.style.display = 'block';
+
+      if (!isEditing || !selectedChar || selectedChar === 'multiple') {
+        stylisticHeaderHint.textContent = 'Enter text edit mode to see alternates for a specific character.';
+        return;
+      }
+
+      const codepoint = selectedChar.codePointAt(0);
+      if (!Number.isFinite(codepoint)) {
+        stylisticHeaderHint.textContent = '';
+        return;
+      }
+
+      const key = String(codepoint);
+      stylisticHeaderHint.textContent = `Alternates for U+${codepoint.toString(16).toUpperCase().padStart(4, '0')}`;
+
+      const columnsPerRow = getColumnsPerRow();
+
+      let anyRendered = false;
+
+      tags.forEach(tag => {
+        const mapping = stylisticSets[tag] || {};
+        const glyphAlternates = mapping[key] || [];
+        if (!glyphAlternates.length) {
+          return;
+        }
+
+        anyRendered = true;
+
+        const section = document.createElement('div');
+        section.style.marginBottom = '0.5rem';
+
+        const title = document.createElement('div');
+        title.className = 'header-label';
+        title.textContent = tag.toUpperCase();
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'glyph-row';
+        grid.style.marginTop = '0.25rem';
+
+        glyphAlternates.forEach(glyph => {
+          const button = document.createElement('button');
+          button.className = 'glyph-btn';
+          button.title = `${glyph.name} (${glyph.hex})`;
+
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg">
+              <path d="${glyph.path}" fill="currentColor" />
+            </svg>
+          `;
+
+          button.onclick = () => {
+            let payload = { type: 'replace-glyph', unicode: glyph.unicode };
+            if (isEditing) {
+              if (selectionStart !== null && selectionEnd !== null && selectionStart !== selectionEnd) {
+                payload.start = selectionStart;
+                payload.end = selectionEnd;
+              } else if (cursorPosition !== null) {
+                payload.position = cursorPosition;
+              }
+            }
+
+            parent.postMessage({ pluginMessage: payload }, '*');
+          };
+
+          grid.appendChild(button);
+        });
+
+        section.appendChild(grid);
+        stylisticContent.appendChild(section);
+
+        // After appending, adjust SVG viewBoxes for this section's glyphs
+        const svgs = grid.querySelectorAll('svg');
+        const boxes = Array.from(svgs).map(svg => svg.getBBox());
+        svgs.forEach((svg, i) => {
+          const bbox = boxes[i];
+          if (bbox.width === 0 && bbox.height === 0) {
+            svg.setAttribute('viewBox', '0 0 100 100');
+            return;
+          }
+          const vX = bbox.x;
+          const vY = bbox.y;
+          const vW = bbox.width;
+          const vH = bbox.height;
+          svg.setAttribute('viewBox', `${vX} ${vY} ${vW} ${vH}`);
+        });
+      });
+
+      if (!anyRendered) {
+        stylisticHeaderHint.textContent = 'No stylistic alternates for this character.';
+      }
+    }
+
     function updateGlyphCount(filteredCount) {
       if (!allGlyphs.length) {
         glyphCountSpan.textContent = '';
@@ -738,6 +861,12 @@
         grid.innerHTML = '';
         searchInput.value = '';
 
+        selectedChar = msg.selectedChar || null;
+        cursorPosition = typeof msg.cursorPosition === 'number' ? msg.cursorPosition : null;
+        selectionStart = typeof msg.selectionStart === 'number' ? msg.selectionStart : null;
+        selectionEnd = typeof msg.selectionEnd === 'number' ? msg.selectionEnd : null;
+        isEditing = !!msg.isEditing;
+
         // Keep the exact real names for the server fetch and insert payload
         currentFontFamily = msg.family;
         currentFontStyle = msg.style;
@@ -759,8 +888,10 @@
           fontStyleDiv.textContent = currentFontStyle;
 
           allGlyphs = data.glyphs || [];
+          stylisticSets = data.stylisticSets || {};
           renderGlyphs(allGlyphs);
           updateGlyphCount();
+          renderStylisticSets();
 
           statusDiv.textContent = '';
         } catch (error) {
@@ -769,6 +900,8 @@
           allGlyphs = [];
           grid.innerHTML = '';
           glyphCountSpan.textContent = '';
+          stylisticSets = {};
+          renderStylisticSets();
         }
       }
       // --- NEW: Check GitHub for Updates ---
