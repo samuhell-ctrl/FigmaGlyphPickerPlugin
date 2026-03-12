@@ -45,7 +45,8 @@
     "asar": true,
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "extendInfo": {
         "LSUIElement": true

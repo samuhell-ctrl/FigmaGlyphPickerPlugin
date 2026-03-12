@@ -24,7 +24,7 @@ jobs:
       - name: 2. Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: 3. Install Server Dependencies
         working-directory: ./figma-glyph-server
@@ -47,7 +47,6 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          # --- ADDED .exe AND .yml FILES HERE ---
           files: |
             FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
             figma-glyph-server/dist/*.exe
@@ -67,13 +66,13 @@ jobs:
       - name: 2. Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: 3. Install Server Dependencies
         working-directory: ./figma-glyph-server
         run: npm install
 
-      - name: 4. Build the .dmg
+      - name: 4. Build the .dmg and .zip
         working-directory: ./figma-glyph-server
         run: npm run dist
 
@@ -90,7 +89,6 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          # --- ADDED .dmg, .zip, AND .yml FILES HERE ---
           files: |
             FigmaGlyphPicker_Mac_${{ github.event.inputs.version }}.zip
             figma-glyph-server/dist/*.dmg
