@@ -1,0 +1,61 @@
+name: Build and Release Windows
+
+# This tells GitHub to add a "Run workflow" button on your GitHub page
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+# Gives the robot permission to upload files to your Releases page
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest # We tell GitHub to use a Windows cloud PC
+
+    steps:
+      - name: 1. Download Your Code
+        uses: actions/checkout@v4
+
+      - name: 2. Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 3. Install Server Dependencies
+        working-directory: ./figma-glyph-server
+        run: npm install
+
+      - name: 4. Build the .exe (electron-builder)
+        working-directory: ./figma-glyph-server
+        run: npm run dist:win
+
+      - name: 5. Package the ZIP File
+        shell: pwsh
+        run: |
+          # Create a temporary staging folder
+          New-Item -ItemType Directory -Force -Path staging\FigmaGlyphPicker_Windows
+
+          # Copy your Figma plugin folder into it
+          Copy-Item -Path figma-glyph-plugin -Destination staging\FigmaGlyphPicker_Windows\figma-glyph-plugin -Recurse
+
+          # Copy the built .exe from the server's dist folder into it
+          Copy-Item -Path "figma-glyph-server\dist\*.exe" -Destination staging\FigmaGlyphPicker_Windows\
+
+          # Zip the whole thing up!
+          Compress-Archive -Path staging\FigmaGlyphPicker_Windows -DestinationPath FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+
+      - name: 6. Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          files: FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
