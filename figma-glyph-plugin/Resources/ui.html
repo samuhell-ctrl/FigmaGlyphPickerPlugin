@@ -13,8 +13,9 @@
       /* Layout */
       --ui-scale: 1.3;              /* overall scale */
       --panel-width-rem: 12.75rem;   /* reference width from Figma */
-      --panel-pad-top: 0.7rem;
+      --panel-pad-top: .7rem;
       --panel-pad-x: 0.7rem;
+      --section-gap: .5rem;        /* vertical spacing between major sections */
 
       /* Typography */
       --font-ui: "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -62,7 +63,6 @@
       --cell-bg-hover-dark: rgba(255, 255, 255, 0.08);
       --glyph-size: 1.5rem; /* NEW: Adjust this number to make the glyphs bigger or smaller! */
       --columns-per-row: 5;
-      --cell-gap: 0.15rem;
 
       /* Focus */
       --focus: #191919;
@@ -71,8 +71,8 @@
       /* Scrollbar */
       --scroll-track: #f5f5f5;
       --scroll-thumb: #b1b1b1;
-      --scroll-track-dark: #000000;
-      --scroll-thumb-dark: #000000;
+      --scroll-track-dark: #050509;
+      --scroll-thumb-dark: #3f3f46;
     }
 
     /* NEW: Kills all transitions temporarily during theme switch */
@@ -128,6 +128,10 @@
       background: var(--scroll-track);
     }
 
+    body[data-theme="dark"]::-webkit-scrollbar-track {
+      background: var(--scroll-track-dark);
+    }
+
     body::-webkit-scrollbar-thumb {
       background-color: var(--scroll-thumb-dark);
       border-radius: 999px;
@@ -137,10 +141,14 @@
       background-color: var(--scroll-thumb);
     }
 
+    body[data-theme="dark"]::-webkit-scrollbar-thumb {
+      background-color: var(--scroll-thumb-dark);
+    }
+
     .container {
       display: flex;
       flex-direction: column;
-      gap: calc(.75rem * var(--ui-scale));
+      gap: calc(var(--section-gap) * var(--ui-scale));
       width: 100%;
     }
 
@@ -152,10 +160,9 @@
       grid-template-columns: 1fr auto; 
       column-gap: calc(1rem * var(--ui-scale));
       row-gap: calc(0.125rem * var(--ui-scale));
-      padding-bottom: calc(0.75rem * var(--ui-scale)); /* Space ABOVE the line */
+      padding-bottom: calc(var(--section-gap) * var(--ui-scale)); /* Space ABOVE the line */
       border-bottom: 1px solid var(--divider);
       font-size: calc(var(--text-xs) * var(--ui-scale));
-      margin-bottom: 0; /* REMOVED! Letting the container gap handle this */
     }
 
     body[data-theme="dark"] #header {
@@ -167,9 +174,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: calc(0.5rem * var(--ui-scale)); /* Space ABOVE the line */
+      padding-bottom: calc(var(--section-gap) * var(--ui-scale)); /* Space ABOVE the line */
       border-bottom: 1px solid var(--divider);
-      margin-bottom: 0; /* REMOVED! Letting the container gap handle this */
     }
 
     body[data-theme="dark"] #theme-row {
@@ -268,7 +274,7 @@
     #search-row {
       display: flex;
       flex-direction: column;
-      gap: calc(0.25rem * var(--ui-scale));
+      gap: calc(var(--section-gap) * var(--ui-scale));
     }
 
     #search-label {
@@ -291,8 +297,6 @@
       background: var(--search-fill);
       color: var(--fg);
       outline: none;
-      margin-top: .25rem;
-
     }
 
     body[data-theme="dark"] #search-input {
@@ -341,7 +345,7 @@
       align-items: center;
       column-gap: calc(1rem * var(--ui-scale));
       font-size: calc(var(--text-xs) * var(--ui-scale));
-      margin-top: 0.5rem;
+      padding-top: .75rem;
     }
 
     #total-label {
@@ -358,7 +362,6 @@
       display: flex;
       flex-direction: column;
       gap: calc(var(--cell-gap) * var(--ui-scale));
-      margin-top: 0; /* CHANGED: Reset to 0 for perfect natural spacing */
       width: 100%;
     }
 
@@ -414,8 +417,8 @@
     }
 
     svg {
-      width: 70%;
-      height: 70%;
+      width: 120%;
+      height: 120%;
       overflow: visible; /* Prevents wide glyphs from getting sliced off */
     }
 
@@ -450,6 +453,29 @@
     .update-link:hover {
       text-decoration: underline;
     }
+
+    /* --- Dev Mode Row --- */
+    #Dev-mode-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: calc(var(--section-gap) * var(--ui-scale));
+      border-bottom: 1px solid var(--divider);
+    }
+
+    body[data-theme="dark"] #Dev-mode-row {
+      border-bottom-color: var(--divider-dark);
+    }
+
+    .Dev-mode-label {
+      font-size: calc(var(--text-xs) * var(--ui-scale));
+      font-weight: var(--font-weight-static);
+      color: var(--fg);
+    }
+
+    body[data-theme="dark"] .Dev-mode-label {
+      color: var(--muted-dark);
+    }
   </style>
 </head>
 <body>
@@ -461,7 +487,9 @@
         <a href="#" id="update-link" target="_blank" class="update-link">Download update</a>
       </div>
 
-      <div id="Dev-mode-row"><div class="Dev-mode-label">Dev mode</div> <!-- Comment out dev mode here -->
+      <div id="Dev-mode-row">
+        <div class="Dev-mode-label">Dev mode</div> 
+      </div>
     
     <div id="theme-row">
       <div class="theme-label">Toggle theme</div>
@@ -499,18 +527,11 @@
     <div id="status-text"></div>
 
     <div id="glyph-grid"></div>
-
-    <div id="stylistic-sets-panel" style="margin-top: 0.75rem; display: none;">
-      <div id="stylistic-sets-header" class="header-label" style="margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center;">
-        <span>Stylistic Sets</span>
-        <span id="stylistic-sets-hint" style="font-weight: var(--font-weight-dynamic); opacity: 0.7;"></span>
-      </div>
-      <div id="stylistic-sets-content"></div>
-    </div>
   </div>
 
   <script>
     let allGlyphs = [];
+    let allGlyphsWithAlternates = [];
     let currentFontFamily = '';
     let currentFontStyle = '';
     let stylisticSets = {};
@@ -519,6 +540,7 @@
     let selectionStart = null;
     let selectionEnd = null;
     let isEditing = false;
+    let userHasTypedQuery = false;
 
     const statusDiv = document.getElementById('status-text');
     const grid = document.getElementById('glyph-grid');
@@ -526,9 +548,6 @@
     const fontStyleDiv = document.getElementById('font-style');
     const glyphCountSpan = document.getElementById('glyph-count');
     const searchInput = document.getElementById('search-input');
-    const stylisticPanel = document.getElementById('stylistic-sets-panel');
-    const stylisticHeaderHint = document.getElementById('stylistic-sets-hint');
-    const stylisticContent = document.getElementById('stylistic-sets-content');
 
     // --- NEW: Smart Screen Size Breakpoints ---
     // --- NEW: Smart Retina/Screen Breakpoints for Grid Columns ---
@@ -594,7 +613,6 @@
           button.className = 'glyph-btn';
           button.title = `${glyph.name} (${glyph.hex})`;
           
-          // Notice we removed the hardcoded viewBox!
           button.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg">
               <path d="${glyph.path}" fill="currentColor" />
@@ -602,14 +620,35 @@
           `;
 
           button.onclick = () => {
-            parent.postMessage({
-              pluginMessage: {
-                type: 'insert-glyph',
-                unicode: glyph.unicode,
-                family: currentFontFamily,
-                style: currentFontStyle
+            if (glyph.isAlternate) {
+              const payload = {
+                type: 'replace-glyph'
+              };
+
+              // Prefer the alternate's own unicode if present; otherwise fall back to the base glyph's unicode
+              const insertCode = (glyph.unicode !== null && glyph.unicode !== undefined)
+                ? glyph.unicode
+                : (glyph.baseUnicode !== null && glyph.baseUnicode !== undefined
+                  ? glyph.baseUnicode
+                  : null);
+
+              if (insertCode !== null) {
+                payload.unicode = insertCode;
               }
-            }, '*');
+              if (glyph.glyphId !== null && glyph.glyphId !== undefined) {
+                payload.glyphId = glyph.glyphId;
+              }
+              parent.postMessage({ pluginMessage: payload }, '*');
+            } else {
+              parent.postMessage({
+                pluginMessage: {
+                  type: 'insert-glyph',
+                  unicode: glyph.unicode,
+                  family: currentFontFamily,
+                  style: currentFontStyle
+                }
+              }, '*');
+            }
           };
 
           row.appendChild(button);
@@ -620,12 +659,26 @@
 
       // --- DYNAMIC CENTERING MAGIC ---
       // Step 2: Now that they are in the DOM, we measure them.
+      // --- DYNAMIC CENTERING MAGIC ---
+      // Step 2: Now that they are in the DOM, we measure them.
       const allSVGs = grid.querySelectorAll('svg');
 
-      // We measure them all at once first. (Doing this in a batch prevents the plugin from lagging!)
+      // We measure them all at once first.
       const boundingBoxes = Array.from(allSVGs).map(svg => svg.getBBox());
 
-      // Step 3: Apply a custom-calculated viewBox to every single glyph
+      // NEW: Find the absolute largest width and height across ALL rendered glyphs
+      let globalMaxW = 0;
+      let globalMaxH = 0;
+      
+      boundingBoxes.forEach(bbox => {
+        if (bbox.width > globalMaxW) globalMaxW = bbox.width;
+        if (bbox.height > globalMaxH) globalMaxH = bbox.height;
+      });
+
+      // Create a master square size that fits the biggest glyph perfectly
+      const globalSide = Math.max(globalMaxW, globalMaxH);
+
+      // Step 3: Apply this uniform scale to every single glyph
       allSVGs.forEach((svg, i) => {
         const bbox = boundingBoxes[i];
 
@@ -635,131 +688,73 @@
           return;
         }
 
-        // We removed the 15% padding! 
-        // We set the camera to wrap the exact edges of the black pixels.
-        // Your CSS button padding will naturally provide the breathing room.
-        const vX = bbox.x;
-        const vY = bbox.y;
-        const vW = bbox.width;
-        const vH = bbox.height;
+        // Find the center of THIS specific glyph
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        
+        // Calculate the viewBox using the GLOBAL side, but the LOCAL center
+        const vX = cx - globalSide / 2;
+        const vY = cy - globalSide / 2;
 
-        svg.setAttribute('viewBox', `${vX} ${vY} ${vW} ${vH}`);
+        svg.setAttribute('viewBox', `${vX} ${vY} ${globalSide} ${globalSide}`);
       });
     }
 
-    function renderStylisticSets() {
-      stylisticContent.innerHTML = '';
-
-      const tags = Object.keys(stylisticSets || {});
-      if (!tags.length) {
-        stylisticPanel.style.display = 'none';
-        return;
-      }
-
-      stylisticPanel.style.display = 'block';
-
-      if (!isEditing || !selectedChar || selectedChar === 'multiple') {
-        stylisticHeaderHint.textContent = 'Enter text edit mode to see alternates for a specific character.';
-        return;
-      }
-
-      const codepoint = selectedChar.codePointAt(0);
-      if (!Number.isFinite(codepoint)) {
-        stylisticHeaderHint.textContent = '';
-        return;
-      }
-
-      const key = String(codepoint);
-      stylisticHeaderHint.textContent = `Alternates for U+${codepoint.toString(16).toUpperCase().padStart(4, '0')}`;
-
-      const columnsPerRow = getColumnsPerRow();
-
-      let anyRendered = false;
-
-      tags.forEach(tag => {
-        const mapping = stylisticSets[tag] || {};
-        const glyphAlternates = mapping[key] || [];
-        if (!glyphAlternates.length) {
-          return;
+    function countAlternatesFromStylisticSets() {
+      let count = 0;
+      const sets = stylisticSets || {};
+      for (const tag of Object.keys(sets)) {
+        const mapping = sets[tag] || {};
+        for (const key of Object.keys(mapping)) {
+          const arr = mapping[key];
+          if (Array.isArray(arr)) count += arr.length;
         }
-
-        anyRendered = true;
-
-        const section = document.createElement('div');
-        section.style.marginBottom = '0.5rem';
-
-        const title = document.createElement('div');
-        title.className = 'header-label';
-        title.textContent = tag.toUpperCase();
-        section.appendChild(title);
-
-        const grid = document.createElement('div');
-        grid.className = 'glyph-row';
-        grid.style.marginTop = '0.25rem';
-
-        glyphAlternates.forEach(glyph => {
-          const button = document.createElement('button');
-          button.className = 'glyph-btn';
-          button.title = `${glyph.name} (${glyph.hex})`;
-
-          button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg">
-              <path d="${glyph.path}" fill="currentColor" />
-            </svg>
-          `;
-
-          button.onclick = () => {
-            let payload = { type: 'replace-glyph', unicode: glyph.unicode };
-            if (isEditing) {
-              if (selectionStart !== null && selectionEnd !== null && selectionStart !== selectionEnd) {
-                payload.start = selectionStart;
-                payload.end = selectionEnd;
-              } else if (cursorPosition !== null) {
-                payload.position = cursorPosition;
-              }
-            }
-
-            parent.postMessage({ pluginMessage: payload }, '*');
-          };
-
-          grid.appendChild(button);
-        });
-
-        section.appendChild(grid);
-        stylisticContent.appendChild(section);
-
-        // After appending, adjust SVG viewBoxes for this section's glyphs
-        const svgs = grid.querySelectorAll('svg');
-        const boxes = Array.from(svgs).map(svg => svg.getBBox());
-        svgs.forEach((svg, i) => {
-          const bbox = boxes[i];
-          if (bbox.width === 0 && bbox.height === 0) {
-            svg.setAttribute('viewBox', '0 0 100 100');
-            return;
-          }
-          const vX = bbox.x;
-          const vY = bbox.y;
-          const vW = bbox.width;
-          const vH = bbox.height;
-          svg.setAttribute('viewBox', `${vX} ${vY} ${vW} ${vH}`);
-        });
-      });
-
-      if (!anyRendered) {
-        stylisticHeaderHint.textContent = 'No stylistic alternates for this character.';
       }
+      return count;
     }
 
-    function updateGlyphCount(filteredCount) {
-      if (!allGlyphs.length) {
+    function countTotalGlyphs() {
+      const base = Array.isArray(allGlyphs) ? allGlyphs.length : 0;
+      return base + countAlternatesFromStylisticSets();
+    }
+
+    function renderForSelectionOrAll() {
+      const universe = allGlyphsWithAlternates.length ? allGlyphsWithAlternates : allGlyphs;
+      if (!universe || !universe.length) {
+        grid.innerHTML = '';
         glyphCountSpan.textContent = '';
         return;
       }
 
-      if (filteredCount === undefined || filteredCount === allGlyphs.length) {
-        glyphCountSpan.textContent = `${allGlyphs.length} glyphs`;
+      let toRender = universe;
+
+      if (!userHasTypedQuery && selectedChar && selectedChar !== 'multiple' && selectedChar.length === 1) {
+        const code = selectedChar.codePointAt(0);
+        if (Number.isFinite(code)) {
+          toRender = universe.filter(glyph => {
+            if (glyph.isAlternate) {
+              return glyph.baseUnicode === code;
+            }
+            return glyph.unicode === code;
+          });
+        }
+      }
+
+      renderGlyphs(toRender);
+      updateGlyphCount(toRender.length);
+    }
+
+    function updateGlyphCount(filteredCount) {
+      const total = countTotalGlyphs();
+      if (!total) {
+        glyphCountSpan.textContent = '';
+        return;
+      }
+
+      if (filteredCount === undefined || filteredCount === total) {
+        glyphCountSpan.textContent = `${total} glyphs`;
       } else {
-        glyphCountSpan.textContent = `${filteredCount} of ${allGlyphs.length} glyphs`;
+        glyphCountSpan.textContent = `${filteredCount} of ${total} glyphs`;
       }
     }
 
@@ -768,23 +763,30 @@
       const query = queryRaw.toLowerCase();
 
       if (!query) {
-        renderGlyphs(allGlyphs);
-        updateGlyphCount();
+        userHasTypedQuery = false;
+        renderForSelectionOrAll();
         statusDiv.textContent = '';
         return;
       }
 
+      userHasTypedQuery = true;
       const normalizedHexQuery = query.replace(/^u\+/i, '').replace(/^0x/i, '');
 
-      const filtered = allGlyphs.filter(glyph => {
+      const universe = allGlyphsWithAlternates.length ? allGlyphsWithAlternates : allGlyphs;
+
+      const filtered = universe.filter(glyph => {
         const name = (glyph.name || '').toLowerCase();
         const hex = (glyph.hex || '').toLowerCase();
-        const unicodeDec = String(glyph.unicode || '').toLowerCase();
+        const unicodeDec = glyph.unicode !== null && glyph.unicode !== undefined
+          ? String(glyph.unicode).toLowerCase()
+          : '';
+        const ssTag = (glyph.ssTag || '').toLowerCase();
 
         return (
           name.includes(query) ||
           hex.includes(normalizedHexQuery) ||
-          unicodeDec.includes(query)
+          unicodeDec.includes(query) ||
+          ssTag.includes(query)
         );
       });
 
@@ -866,6 +868,7 @@
         selectionStart = typeof msg.selectionStart === 'number' ? msg.selectionStart : null;
         selectionEnd = typeof msg.selectionEnd === 'number' ? msg.selectionEnd : null;
         isEditing = !!msg.isEditing;
+        userHasTypedQuery = false;
 
         // Keep the exact real names for the server fetch and insert payload
         currentFontFamily = msg.family;
@@ -889,19 +892,58 @@
 
           allGlyphs = data.glyphs || [];
           stylisticSets = data.stylisticSets || {};
-          renderGlyphs(allGlyphs);
-          updateGlyphCount();
-          renderStylisticSets();
+
+          allGlyphsWithAlternates = Array.isArray(allGlyphs) ? allGlyphs.slice() : [];
+
+          const sets = stylisticSets || {};
+          for (const tag of Object.keys(sets)) {
+            const mapping = sets[tag] || {};
+            for (const key of Object.keys(mapping)) {
+              const baseUnicode = Number(key);
+              const alternates = mapping[key] || [];
+              alternates.forEach(alt => {
+                allGlyphsWithAlternates.push({
+                  ...alt,
+                  isAlternate: true,
+                  baseUnicode
+                });
+              });
+            }
+          }
+
+          function glyphSortCode(glyph) {
+            if (glyph.isAlternate) return glyph.baseUnicode ?? null;
+            return glyph.unicode ?? null;
+          }
+
+          allGlyphsWithAlternates.sort((a, b) => {
+            const aCode = glyphSortCode(a);
+            const bCode = glyphSortCode(b);
+
+            if (aCode !== null && bCode !== null && aCode !== bCode) {
+              return aCode - bCode;
+            }
+            if (aCode !== null && bCode === null) return -1;
+            if (aCode === null && bCode !== null) return 1;
+
+            if (!!a.isAlternate !== !!b.isAlternate) {
+              return a.isAlternate ? 1 : -1; // base glyph first, then alternates
+            }
+            return 0;
+          });
+
+          renderForSelectionOrAll();
 
           statusDiv.textContent = '';
         } catch (error) {
           statusDiv.textContent = `Error: Cannot load local file for ${msg.family}.`;
           console.error(error);
           allGlyphs = [];
+          allGlyphsWithAlternates = [];
           grid.innerHTML = '';
           glyphCountSpan.textContent = '';
           stylisticSets = {};
-          renderStylisticSets();
+          updateGlyphCount();
         }
       }
       // --- NEW: Check GitHub for Updates ---
