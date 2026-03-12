@@ -16,6 +16,7 @@ permissions:
 
 env:
   APP_VERSION: ${{ inputs.version || github.ref_name }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← Fix 1: opts actions/checkout & actions/setup-node into Node 24
 
 jobs:
   build-windows:
@@ -38,6 +39,9 @@ jobs:
       - name: 4. Build the .exe
         working-directory: ./figma-glyph-server
         run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}       # ← Fix 2: allows electron-builder to access GitHub
+          CSC_IDENTITY_AUTO_DISCOVERY: false           # ← Fix 3: disables code-signing lookup on CI
 
       - name: 5. Package the Windows ZIP File
         shell: pwsh
@@ -79,6 +83,9 @@ jobs:
       - name: 4. Build the .dmg and .zip
         working-directory: ./figma-glyph-server
         run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}       # ← Fix 2: allows electron-builder to access GitHub
+          CSC_IDENTITY_AUTO_DISCOVERY: false           # ← Fix 3: disables macOS code-signing on CI
 
       - name: 5. Package the Mac ZIP File
         run: |
