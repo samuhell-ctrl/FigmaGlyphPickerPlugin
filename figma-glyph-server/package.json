@@ -33,8 +33,8 @@
     "productName": "Figma Glyph Font Server",
     "publish": {
       "provider": "github",
-      "owner": "YOUR_USERNAME",
-      "repo": "YOUR_REPO_NAME"
+      "owner": "samuhell-ctrl",
+      "repo": "FigmaGlyphPickerPlugin"
     },
     "files": [
       "main.js",
