@@ -1,6 +1,9 @@
 name: Build and Release (Mac & Windows)
 
 on:
+  push:
+    tags:
+      - 'v*' # <-- THIS is what triggers it automatically on tag push
   workflow_dispatch:
     inputs:
       version:
@@ -10,6 +13,10 @@ on:
 
 permissions:
   contents: write
+
+env:
+  # Smart variable: Uses manual input if available, otherwise uses the pushed tag name
+  APP_VERSION: ${{ inputs.version || github.ref_name }}
 
 jobs:
   # ==========================================
@@ -40,15 +47,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path staging\FigmaGlyphPicker_Windows
           Copy-Item -Path figma-glyph-plugin -Destination staging\FigmaGlyphPicker_Windows\figma-glyph-plugin -Recurse
           Copy-Item -Path "figma-glyph-server\dist\*.exe" -Destination staging\FigmaGlyphPicker_Windows\
-          Compress-Archive -Path staging\FigmaGlyphPicker_Windows -DestinationPath FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+          Compress-Archive -Path staging\FigmaGlyphPicker_Windows -DestinationPath FigmaGlyphPicker_Windows_${{ env.APP_VERSION }}.zip
 
       - name: 6. Publish Windows to Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
+          tag_name: ${{ env.APP_VERSION }}
+          name: Release ${{ env.APP_VERSION }}
           files: |
-            FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+            FigmaGlyphPicker_Windows_${{ env.APP_VERSION }}.zip
             figma-glyph-server/dist/*.exe
             figma-glyph-server/dist/*.yml
           draft: false
@@ -82,15 +89,15 @@ jobs:
           cp -r figma-glyph-plugin staging/FigmaGlyphPicker_Mac/
           cp figma-glyph-server/dist/*.dmg staging/FigmaGlyphPicker_Mac/
           cd staging
-          zip -r ../FigmaGlyphPicker_Mac_${{ github.event.inputs.version }}.zip FigmaGlyphPicker_Mac
+          zip -r ../FigmaGlyphPicker_Mac_${{ env.APP_VERSION }}.zip FigmaGlyphPicker_Mac
 
       - name: 6. Publish Mac to Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
+          tag_name: ${{ env.APP_VERSION }}
+          name: Release ${{ env.APP_VERSION }}
           files: |
-            FigmaGlyphPicker_Mac_${{ github.event.inputs.version }}.zip
+            FigmaGlyphPicker_Mac_${{ env.APP_VERSION }}.zip
             figma-glyph-server/dist/*.dmg
             figma-glyph-server/dist/*.zip
             figma-glyph-server/dist/*.yml
