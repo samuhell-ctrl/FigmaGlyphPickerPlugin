@@ -9,6 +9,13 @@ const getSystemFonts = require('get-system-fonts');
 
 const app = express();
 const PORT = 3000;
+// Load the package.json so we know the current app version
+const packageJson = require('./package.json');
+
+// --- NEW ENDPOINT: Return the current version ---
+app.get('/version', (req, res) => {
+    res.json({ version: packageJson.version });
+});
 
 // The in-memory dictionary. 
 const fontDictionary = {};

@@ -1,6 +1,7 @@
 const { app, Tray, Menu } = require('electron');
 const path = require('path');
 const { startServer, stopServer } = require('./server');
+const { autoUpdater } = require('electron-updater');
 
 let tray = null;
 let serverStarted = false;

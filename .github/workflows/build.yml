@@ -47,7 +47,11 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          files: FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+          # --- ADDED .exe AND .yml FILES HERE ---
+          files: |
+            FigmaGlyphPicker_Windows_${{ github.event.inputs.version }}.zip
+            figma-glyph-server/dist/*.exe
+            figma-glyph-server/dist/*.yml
           draft: false
           prerelease: false
 
@@ -86,6 +90,11 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          files: FigmaGlyphPicker_Mac_${{ github.event.inputs.version }}.zip
+          # --- ADDED .dmg, .zip, AND .yml FILES HERE ---
+          files: |
+            FigmaGlyphPicker_Mac_${{ github.event.inputs.version }}.zip
+            figma-glyph-server/dist/*.dmg
+            figma-glyph-server/dist/*.zip
+            figma-glyph-server/dist/*.yml
           draft: false
           prerelease: false

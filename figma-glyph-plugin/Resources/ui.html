@@ -422,10 +422,44 @@
     body[data-theme="dark"] svg path {
       fill: #f9fafb;
     }
+
+    /* --- NEW: Update Row Styles --- */
+    #update-row {
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: calc(0.25rem * var(--ui-scale));
+    }
+
+    .update-label, .update-link {
+      font-size: calc(var(--text-xs) * var(--ui-scale));
+      color: var(--muted);
+      font-weight: var(--font-weight-dynamic);
+    }
+
+    /* Dark mode text colors */
+    body[data-theme="dark"] .update-label,
+    body[data-theme="dark"] .update-link {
+      color: rgba(255, 255, 255, 0.4); 
+    }
+
+    .update-link {
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .update-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="container">
+    
+      <div id="update-row" style="display: none;">
+        <div class="update-label">Update V<span id="update-version">1.0.0</span></div>
+        <a href="#" id="update-link" target="_blank" class="update-link">Download update</a>
+      </div>
     <div id="theme-row">
       <div class="theme-label">Toggle theme</div>
       <button id="theme-switch" role="switch">
@@ -737,6 +771,37 @@
           glyphCountSpan.textContent = '';
         }
       }
+      // --- NEW: Check GitHub for Updates ---
+    async function checkForUpdates() {
+      try {
+        // 1. Get the local server version we just set up
+        const localRes = await fetch('http://localhost:3000/version');
+        const localData = await localRes.json();
+        const localVersion = localData.version;
+
+        // 2. Ask GitHub for the latest release data
+        // REPLACE THESE WITH YOUR GITHUB DETAILS!
+        const githubRes = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO_NAME/releases/latest');
+        const githubData = await githubRes.json();
+        
+        // GitHub tags usually have a 'v' (like v1.0.1), so we remove it to compare easily
+        const latestVersion = githubData.tag_name.replace('v', '');
+
+        // 3. If versions don't match, unhide the update row!
+        if (localVersion !== latestVersion) {
+          document.getElementById('update-version').textContent = latestVersion;
+          document.getElementById('update-link').href = githubData.html_url; // Links to your releases page
+          
+          // Change display from 'none' to 'flex' to reveal the UI
+          document.getElementById('update-row').style.display = 'flex';
+        }
+      } catch (err) {
+        console.log("Could not check for updates (server might be off or no internet).", err);
+      }
+    }
+
+    // Run this check the millisecond the plugin opens
+    checkForUpdates();
     };
   </script>
 </body>
