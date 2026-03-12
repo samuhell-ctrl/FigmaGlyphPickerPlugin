@@ -494,7 +494,7 @@
     function setInitialWindowSize() {
       const screenHeight = window.screen.height;
       const rem = 16;
-      let targetWidth = 22 * rem;  // Default: 320px
+      let targetWidth = 25 * rem;  // Default: 320px
       let targetHeight = 45 * rem; // Default: 560px
 
       // BREAKPOINT: If they are on a small laptop screen (e.g., 13" MacBook)
@@ -504,7 +504,7 @@
       
       // BREAKPOINT: If they are on a massive desktop monitor
       if (screenHeight > 1600) {
-        targetWidth = 28 * rem;  // Widen to 400px
+        targetWidth = 30 * rem;  // Widen to 400px
         targetHeight = 40 * rem; // Grow window to 720px tall
       }
 
