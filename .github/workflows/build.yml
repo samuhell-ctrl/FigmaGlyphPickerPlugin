@@ -7,16 +7,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release Version (e.g., v1.0.0)'
+        description: 'Release Version (e.g., v1.0.1)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.1'
 
 permissions:
   contents: write
 
 env:
   APP_VERSION: ${{ inputs.version || github.ref_name }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← Fix 1: opts actions/checkout & actions/setup-node into Node 24
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-windows:
@@ -40,16 +40,17 @@ jobs:
         working-directory: ./figma-glyph-server
         run: npm run dist
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}       # ← Fix 2: allows electron-builder to access GitHub
-          CSC_IDENTITY_AUTO_DISCOVERY: false           # ← Fix 3: disables code-signing lookup on CI
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: 5. Package the Windows ZIP File
+      - name: 5. Package Main Windows Bundle
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging\FigmaGlyphPicker_Windows
           Copy-Item -Path figma-glyph-plugin -Destination staging\FigmaGlyphPicker_Windows\figma-glyph-plugin -Recurse
           Copy-Item -Path "figma-glyph-server\dist\*.exe" -Destination staging\FigmaGlyphPicker_Windows\
-          Compress-Archive -Path staging\FigmaGlyphPicker_Windows -DestinationPath FigmaGlyphPicker_Windows_${{ env.APP_VERSION }}.zip
+          # Named with 00_ to force it to the top of the GitHub Assets list
+          Compress-Archive -Path staging\FigmaGlyphPicker_Windows -DestinationPath 00_DOWNLOAD_Windows_Bundle_${{ env.APP_VERSION }}.zip
 
       - name: 6. Publish Windows to Releases
         uses: softprops/action-gh-release@v2
@@ -57,7 +58,7 @@ jobs:
           tag_name: ${{ env.APP_VERSION }}
           name: Release ${{ env.APP_VERSION }}
           files: |
-            FigmaGlyphPicker_Windows_${{ env.APP_VERSION }}.zip
+            00_DOWNLOAD_Windows_Bundle_${{ env.APP_VERSION }}.zip
             figma-glyph-server/dist/*.exe
             figma-glyph-server/dist/*.yml
           draft: false
@@ -84,16 +85,17 @@ jobs:
         working-directory: ./figma-glyph-server
         run: npm run dist
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}       # ← Fix 2: allows electron-builder to access GitHub
-          CSC_IDENTITY_AUTO_DISCOVERY: false           # ← Fix 3: disables macOS code-signing on CI
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: 5. Package the Mac ZIP File
+      - name: 5. Package Main Mac Bundle
         run: |
           mkdir -p staging/FigmaGlyphPicker_Mac
           cp -r figma-glyph-plugin staging/FigmaGlyphPicker_Mac/
           cp figma-glyph-server/dist/*.dmg staging/FigmaGlyphPicker_Mac/
           cd staging
-          zip -r ../FigmaGlyphPicker_Mac_${{ env.APP_VERSION }}.zip FigmaGlyphPicker_Mac
+          # Named with 00_ to force it to the top of the GitHub Assets list
+          zip -r ../00_DOWNLOAD_Mac_Bundle_${{ env.APP_VERSION }}.zip FigmaGlyphPicker_Mac
 
       - name: 6. Publish Mac to Releases
         uses: softprops/action-gh-release@v2
@@ -101,7 +103,7 @@ jobs:
           tag_name: ${{ env.APP_VERSION }}
           name: Release ${{ env.APP_VERSION }}
           files: |
-            FigmaGlyphPicker_Mac_${{ env.APP_VERSION }}.zip
+            00_DOWNLOAD_Mac_Bundle_${{ env.APP_VERSION }}.zip
             figma-glyph-server/dist/*.dmg
             figma-glyph-server/dist/*.zip
             figma-glyph-server/dist/*.yml
