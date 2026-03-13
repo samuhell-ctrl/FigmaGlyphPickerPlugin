@@ -6,7 +6,7 @@ const rem = 16;
 // E.g., 25rem wide and 37.5rem tall
 figma.showUI(__html__, { width: 30 * rem, height: 42.5 * rem });
 
-const IS_DEV_BUILD = true;
+const IS_DEV_BUILD = false;
 
 function postRuntimeConfig() {
     figma.ui.postMessage({

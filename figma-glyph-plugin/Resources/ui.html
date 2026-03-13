@@ -596,49 +596,6 @@
       opacity: 0.95;
     }
 
-    /* --- Dev Mode Row --- */
-    #Dev-mode-row {
-      display: none;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: calc(var(--section-gap) * var(--ui-scale));
-      border-bottom: 1px solid var(--divider);
-    }
-
-    body[data-theme="dark"] #Dev-mode-row {
-      border-bottom-color: var(--divider-dark);
-    }
-
-    .Dev-mode-label {
-      font-size: calc(var(--text-xs) * var(--ui-scale));
-      font-weight: var(--font-weight-static);
-      color: var(--fg);
-    }
-
-    body[data-theme="dark"] .Dev-mode-label {
-      color: var(--muted-dark);
-    }
-
-    .dev-mode-controls {
-      display: flex;
-      align-items: center;
-      gap: calc(0.4rem * var(--ui-scale));
-    }
-
-    #dev-update-state {
-      font-size: calc(var(--text-xs) * var(--ui-scale));
-      border-radius: calc(var(--search-radius) * var(--ui-scale));
-      border: .15px solid var(--search-stroke);
-      background: var(--search-fill);
-      color: var(--fg);
-      padding: calc(0.2rem * var(--ui-scale)) calc(0.3rem * var(--ui-scale));
-    }
-
-    body[data-theme="dark"] #dev-update-state {
-      border-color: var(--search-stroke-dark);
-      background: var(--search-fill-dark);
-      color: var(--fg-dark);
-    }
   </style>
 </head>
 <body>
@@ -650,17 +607,6 @@
         <a href="#" id="update-link" target="_blank" class="update-link">Download update</a>
       </div>
 
-      <div id="Dev-mode-row">
-        <div class="Dev-mode-label">Dev mode</div>
-        <div class="dev-mode-controls">
-          <select id="dev-update-state">
-            <option value="auto">Update: Auto</option>
-            <option value="available">Update: Available</option>
-            <option value="current">Update: Current</option>
-          </select>
-        </div>
-      </div>
-    
     <div id="theme-row">
       <div class="theme-label">Toggle theme</div>
       <button id="theme-switch" role="switch">
@@ -744,8 +690,6 @@
     const fontFamilyDiv = document.getElementById('font-family');
     const glyphCountSpan = document.getElementById('glyph-count');
     const searchInput = document.getElementById('search-input');
-    const devModeRow = document.getElementById('Dev-mode-row');
-    const devUpdateStateSelect = document.getElementById('dev-update-state');
     const updateRow = document.getElementById('update-row');
     const updateVersionSpan = document.getElementById('update-version');
     const updateLink = document.getElementById('update-link');
@@ -761,23 +705,14 @@
     const GITHUB_RELEASES_LATEST_URL = 'https://api.github.com/repos/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest';
     const isFigmaRuntime = window.self !== window.top;
     const isStandalonePreview = !isFigmaRuntime;
-    const urlParams = new URLSearchParams(window.location.search);
-    const forcedDevMode = urlParams.get('dev') === '1';
-    const previewUpdateParam = (urlParams.get('update') || '').toLowerCase();
-
     const runtimeConfig = {
-      isDevBuild: isStandalonePreview || forcedDevMode,
-      enableDevTools: isStandalonePreview || forcedDevMode
+      isDevBuild: false,
+      enableDevTools: false
     };
 
     function postPluginMessage(pluginMessage) {
       if (!isFigmaRuntime) return;
       parent.postMessage({ pluginMessage }, '*');
-    }
-
-    function applyDevModeVisibility() {
-      const visible = !!runtimeConfig.isDevBuild;
-      devModeRow.style.display = visible ? 'flex' : 'none';
     }
 
     function fallbackEnableLabel(ssTag, ssLabel) {
@@ -1172,22 +1107,7 @@
       }
     }
 
-    function getDevUpdateState() {
-      if (!runtimeConfig.isDevBuild) return 'auto';
-      return devUpdateStateSelect.value || 'auto';
-    }
-
     async function checkForUpdates() {
-      const forcedState = getDevUpdateState();
-      if (forcedState === 'available') {
-        setUpdateRowVisible(true, 'dev-preview', 'https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest');
-        return;
-      }
-      if (forcedState === 'current') {
-        setUpdateRowVisible(false);
-        return;
-      }
-
       try {
         const localRes = await fetch(`${LOCAL_SERVER_BASE_URL}/version`);
         if (!localRes.ok) throw new Error(`Local version HTTP ${localRes.status}`);
@@ -1322,7 +1242,6 @@
       if (msg.type === 'runtime-config') {
         runtimeConfig.isDevBuild = !!msg.isDevBuild;
         runtimeConfig.enableDevTools = !!msg.enableDevTools;
-        applyDevModeVisibility();
         await checkForUpdates();
         return;
       }
@@ -1370,19 +1289,7 @@
       await handlePluginMessage(msg);
     };
 
-    devUpdateStateSelect.addEventListener('change', () => {
-      if (!runtimeConfig.isDevBuild) return;
-      checkForUpdates();
-    });
-
     function initializeRuntime() {
-      const validForcedUpdateState = ['auto', 'available', 'current'];
-      if (validForcedUpdateState.includes(previewUpdateParam)) {
-        devUpdateStateSelect.value = previewUpdateParam;
-      }
-
-      applyDevModeVisibility();
-
       if (isFigmaRuntime) {
         postPluginMessage({ type: 'request-runtime-config' });
       } else {
