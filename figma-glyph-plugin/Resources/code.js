@@ -6,6 +6,18 @@ const rem = 16;
 // E.g., 25rem wide and 37.5rem tall
 figma.showUI(__html__, { width: 30 * rem, height: 42.5 * rem });
 
+const IS_DEV_BUILD = true;
+
+function postRuntimeConfig() {
+    figma.ui.postMessage({
+        type: 'runtime-config',
+        isDevBuild: IS_DEV_BUILD,
+        enableDevTools: IS_DEV_BUILD
+    });
+}
+
+postRuntimeConfig();
+
 // 1. Analyze Selection and Send Font to UI
 function checkSelection() {
     const selection = figma.currentPage.selection;
@@ -77,8 +89,49 @@ figma.on('selectionchange', () => {
 });
 checkSelection();
 
+function formatStylisticSetDisplay(ssTag, ssLabel) {
+    const cleanTag = typeof ssTag === 'string' ? ssTag.toLowerCase() : '';
+    const cleanLabel = typeof ssLabel === 'string' ? ssLabel.trim() : '';
+    if (/^ss\d{2}$/.test(cleanTag)) {
+        const setNumber = Number.parseInt(cleanTag.slice(2), 10);
+        const normalizedSet = `set ${setNumber}`;
+        const normalizedLabel = cleanLabel.toLowerCase().replace(/[.\s]+/g, ' ').trim();
+        if (cleanLabel) {
+            if (
+                normalizedLabel === normalizedSet ||
+                normalizedLabel === `set${setNumber}` ||
+                normalizedLabel === cleanTag
+            ) {
+                return `Set ${setNumber}`;
+            }
+            return `Set ${setNumber}. ${cleanLabel}`;
+        }
+        return `Set ${setNumber} (${cleanTag.toUpperCase()})`;
+    }
+    if (cleanLabel) return cleanLabel;
+    if (cleanTag) return cleanTag.toUpperCase();
+    return 'stylistic set';
+}
+
+function notifyStylisticSetHint(ssTag, ssLabel) {
+    const display = formatStylisticSetDisplay(ssTag, ssLabel);
+    const message = `Enable ${display} in Text > Type to view this alternate.`;
+    figma.ui.postMessage({
+        type: 'stylistic-set-hint',
+        message,
+        ssTag,
+        ssLabel,
+        enableLabel: display
+    });
+}
+
 // 2. Listen for User Clicks and insert glyphs into the selected text layer
 figma.ui.onmessage = async (msg) => {
+    if (msg.type === 'request-runtime-config') {
+        postRuntimeConfig();
+        return;
+    }
+
     // --- NEW: Listen for the Smart Boot-up size ---
     if (msg.type === 'smart-resize') {
         figma.ui.resize(msg.width, msg.height);
@@ -87,7 +140,10 @@ figma.ui.onmessage = async (msg) => {
 
     if (msg.type === 'insert-glyph') {
         const selection = figma.currentPage.selection;
-        // ... (the rest of your insert-glyph code stays the same)
+        if (selection.length === 0) {
+            figma.notify('Please select a text layer.');
+            return;
+        }
 
         const node = selection[0];
         if (node.type !== 'TEXT') {
@@ -96,6 +152,11 @@ figma.ui.onmessage = async (msg) => {
         }
         if (node.fontName === figma.mixed) {
             figma.notify('Selected text layer has mixed fonts; cannot safely insert glyph.');
+            return;
+        }
+
+        if (msg.unicode == null || !Number.isFinite(msg.unicode)) {
+            figma.notify('Invalid glyph code provided.');
             return;
         }
 
@@ -144,6 +205,11 @@ figma.ui.onmessage = async (msg) => {
 
         await figma.loadFontAsync(node.fontName);
 
+        if (msg.unicode == null || !Number.isFinite(msg.unicode)) {
+            figma.notify('Invalid glyph code provided.');
+            return;
+        }
+
         const glyphChar = String.fromCodePoint(msg.unicode);
         const textRange = figma.currentPage.selectedTextRange;
 
@@ -162,6 +228,9 @@ figma.ui.onmessage = async (msg) => {
             // Fallback: append at end
             node.characters = node.characters + glyphChar;
             figma.currentPage.selection = [node];
+            if (msg.isStylisticAlternate) {
+                notifyStylisticSetHint(msg.ssTag, msg.ssLabel);
+            }
             return;
         }
 
@@ -176,5 +245,9 @@ figma.ui.onmessage = async (msg) => {
             end: newPos
         };
         figma.currentPage.selection = [node];
+
+        if (msg.isStylisticAlternate) {
+            notifyStylisticSetHint(msg.ssTag, msg.ssLabel);
+        }
     }
 };
