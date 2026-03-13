@@ -16,11 +16,21 @@ You don't need to build this from scratch! Our automated cloud pipeline packages
 ### 🍎 macOS
 **👉 [Download the Mac Version](https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest)**
 
-*(Note: These links will take you to the latest Release page. Simply scroll to the **Assets** section at the bottom and click the `.zip` file for your operating system!)*
+*(Note: These links open the latest Release page. In **Assets**, use the `00_DOWNLOAD_*_Bundle_*.zip` file for your OS.)*
 
 **Inside your downloaded ZIP, you will find:**
-1. **The Server Executable** (`.exe` or `.dmg`): Run this once to start the background font server.
+1. **The Server App** (`.exe` on Windows or `.app` on macOS): Run this to start the background font server.
 2. **The Plugin Folder** (`figma-glyph-plugin`): Load this folder into your Figma Desktop app by going to `Plugins > Development > Import plugin from manifest...` and selecting the `manifest.json` file.
+
+### 🍎 macOS first launch (unsigned app)
+
+Because this app is distributed without Apple notarization, macOS may block first launch.
+
+1. Open the app from wherever you extracted it (Downloads is fine).
+2. If macOS blocks it, **right-click** the app and choose **Open**.
+3. Click **Open** in the confirmation dialog.
+
+You do **not** need to move the app to `Applications` unless you want to keep it there.
 
 ---
 
