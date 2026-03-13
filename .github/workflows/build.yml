@@ -92,7 +92,7 @@ jobs:
         run: |
           mkdir -p staging/FigmaGlyphPicker_Mac
           cp -r figma-glyph-plugin staging/FigmaGlyphPicker_Mac/
-          APP_PATH=$(find figma-glyph-server/dist -type d -name "*.app" | head -n 1)
+          APP_PATH=$(find figma-glyph-server/dist -type d -name "*.app" -print -quit)
           if [ -z "$APP_PATH" ]; then
             echo "No .app bundle found in figma-glyph-server/dist"
             exit 1
