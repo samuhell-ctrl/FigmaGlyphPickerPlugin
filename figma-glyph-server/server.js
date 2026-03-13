@@ -192,7 +192,10 @@ app.get('/fonts', (req, res) => {
 function extractStylisticSetsFromFont(font) {
     const gsub = font.tables && font.tables.gsub;
     if (!gsub || !Array.isArray(gsub.features) || !Array.isArray(gsub.lookups)) {
-        return {};
+        return {
+            stylisticSets: {},
+            stylisticSetLabels: {}
+        };
     }
 
     const stylisticTags = new Set();
@@ -204,9 +207,53 @@ function extractStylisticSetsFromFont(font) {
 
     // tag -> inputUnicodeDecString -> Set(altGlyphId)
     const raw = Object.create(null);
+    // tag -> featureNameID (for user-facing label lookup)
+    const labelNameIdByTag = Object.create(null);
 
     function asNumber(x) {
         return typeof x === 'number' && Number.isFinite(x) ? x : null;
+    }
+
+    function getSetNumberFromTag(tag) {
+        const match = /^ss(\d{2})$/i.exec(tag || '');
+        return match ? Number.parseInt(match[1], 10) : null;
+    }
+
+    function defaultSetLabelForTag(tag) {
+        const n = getSetNumberFromTag(tag);
+        return Number.isFinite(n) ? `Set ${n}` : String(tag || '').toUpperCase();
+    }
+
+    function readNameRecordString(record) {
+        if (!record) return '';
+        const value = record.string ?? record.text ?? record.value ?? '';
+        if (typeof value === 'string') return value;
+        if (value && typeof value === 'object' && typeof value.en === 'string') return value.en;
+        return '';
+    }
+
+    function getLabelFromNameTableById(nameId) {
+        const nameTable = font.tables && font.tables.name;
+        if (!nameTable || !Array.isArray(nameTable.records)) return '';
+
+        const records = nameTable.records.filter(r => r && r.nameID === nameId);
+        if (!records.length) return '';
+
+        // Prefer English-ish records when possible, then first non-empty.
+        const preferred = records.find(r =>
+            r.platformID === 3 &&
+            (r.languageID === 1033 || r.languageID === 0x0409)
+        ) || records[0];
+
+        return readNameRecordString(preferred).trim();
+    }
+
+    function normalizeLabel(tag, rawLabel) {
+        const fallback = defaultSetLabelForTag(tag);
+        const cleaned = String(rawLabel || '').replace(/\s+/g, ' ').trim();
+        if (!cleaned) return fallback;
+        if (/^ss\d{2}$/i.test(cleaned)) return fallback;
+        return cleaned;
     }
 
     function getGlyphIdCount() {
@@ -474,6 +521,19 @@ function extractStylisticSetsFromFont(font) {
         if (!stylisticTags.has(tag)) continue;
 
         const feature = featureRecord.feature || featureRecord;
+        const featureParams = feature.featureParams || feature.params || feature.featureParameters || null;
+        const uiNameId = asNumber(
+            featureParams && (
+                featureParams.uiNameID ??
+                featureParams.uiNameId ??
+                featureParams.nameID ??
+                featureParams.nameId
+            )
+        );
+        if (uiNameId !== null && labelNameIdByTag[tag] === undefined) {
+            labelNameIdByTag[tag] = uiNameId;
+        }
+
         const indices = feature.lookupListIndexes || feature.lookupIndexes || [];
         const visitedLookups = new Set();
 
@@ -484,9 +544,16 @@ function extractStylisticSetsFromFont(font) {
 
     // Convert glyph IDs into the response shape with SVG paths.
     const finalResult = {};
+    const stylisticSetLabels = {};
     const targetFontSize = 72;
 
     for (const tag of Object.keys(raw)) {
+        const configuredNameId = labelNameIdByTag[tag];
+        const labelFromNameTable = configuredNameId !== undefined
+            ? getLabelFromNameTableById(configuredNameId)
+            : '';
+        stylisticSetLabels[tag] = normalizeLabel(tag, labelFromNameTable);
+
         finalResult[tag] = {};
         for (const inputCode of Object.keys(raw[tag])) {
             const glyphIdSet = raw[tag][inputCode];
@@ -525,7 +592,10 @@ function extractStylisticSetsFromFont(font) {
         }
     }
 
-    return finalResult;
+    return {
+        stylisticSets: finalResult,
+        stylisticSetLabels
+    };
 }
 
 app.get('/get-glyphs', (req, res) => {
@@ -629,14 +699,18 @@ app.get('/get-glyphs', (req, res) => {
             }
         }
 
-        const stylisticSets = extractStylisticSetsFromFont(font);
+        const {
+            stylisticSets,
+            stylisticSetLabels
+        } = extractStylisticSetsFromFont(font);
 
         res.json({
             fontFamily: font.names.fontFamily?.en || resolvedFamily,
             style: resolvedStyle,
             totalGlyphsParsed: glyphData.length,
             glyphs: glyphData,
-            stylisticSets
+            stylisticSets,
+            stylisticSetLabels
         });
 
     } catch (error) {

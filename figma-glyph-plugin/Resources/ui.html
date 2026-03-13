@@ -152,15 +152,13 @@
       width: 100%;
     }
 
-   /* Header with font name + weight */
-  /* Header with font name + weight */
-  /* Header with font name + weight */
-  #header {
+    /* Header: selected font row */
+    #header {
       display: grid;
-      grid-template-columns: 1fr auto; 
+      grid-template-columns: 1fr auto;
       column-gap: calc(1rem * var(--ui-scale));
-      row-gap: calc(0.125rem * var(--ui-scale));
-      padding-bottom: calc(var(--section-gap) * var(--ui-scale)); /* Space ABOVE the line */
+      align-items: center;
+      padding-bottom: calc(var(--section-gap) * var(--ui-scale));
       border-bottom: 1px solid var(--divider);
       font-size: calc(var(--text-xs) * var(--ui-scale));
     }
@@ -241,22 +239,12 @@
       color: var(--muted-dark);
     }
 
-    #font-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
     #font-family {
       font-size: calc(var(--text-xs) * var(--ui-scale));
       font-weight: var(--font-weight-dynamic);
+      text-align: right;
+      white-space: nowrap;
     }
-
-    #font-style {
-      font-size: calc(var(--text-xs) * var(--ui-scale));
-      font-weight: var(--current-weight, 400); 
-      font-style: var(--current-italic, normal);
-  }
 
     #glyph-meta {
       font-size: calc(var(--text-xs) * var(--ui-scale));
@@ -376,6 +364,8 @@
     .glyph-btn {
       display: flex;
       width: 100%;
+      height: 100%;
+      box-sizing: border-box;
       padding: calc(var(--cell-pad-top) * var(--ui-scale)) calc(var(--cell-pad-right) * var(--ui-scale))
         calc(var(--cell-pad-bottom) * var(--ui-scale)) calc(var(--cell-pad-left) * var(--ui-scale));
       flex-direction: column;
@@ -434,7 +424,7 @@
     }
 
     .update-label, .update-link {
-      font-size: calc(var(--text-xs) * var(--ui-scale));
+      font-size: .8rem;
       color: var(--muted);
       font-weight: var(--font-weight-dynamic);
     }
@@ -454,9 +444,161 @@
       text-decoration: underline;
     }
 
+    #stylistic-popup-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(13, 13, 13, 0.8);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 10000;
+    }
+
+    #stylistic-popup-overlay.visible {
+      display: flex;
+    }
+
+    #stylistic-popup-card {
+      width: min(85%, calc(22.5rem * var(--ui-scale)));
+      background: rgba(255, 255, 255, 0.06);
+      border: 0.3px solid rgba(255, 255, 255, 0.12);
+      border-radius: calc(0.5rem * var(--ui-scale));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      padding: calc(0.6rem * var(--ui-scale));
+      color: #ffffff;
+      font-size: calc(var(--text-xs) * var(--ui-scale));
+      line-height: 1.2;
+    }
+
+    #stylistic-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(0.6rem * var(--ui-scale));
+    }
+
+    #stylistic-popup-title {
+      font-weight: var(--font-weight-static);
+      color: #ffffff;
+    }
+
+    .popup-controls {
+      display: flex;
+      align-items: center;
+      gap: calc(0.2rem * var(--ui-scale));
+      flex-shrink: 0;
+    }
+
+    .popup-icon-btn {
+      width: calc(1.15rem * var(--ui-scale));
+      height: calc(1.15rem * var(--ui-scale));
+      border: 0;
+      border-radius: calc(0.3rem * var(--ui-scale));
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: calc(0.75rem * var(--ui-scale));
+      line-height: 1;
+      font-weight: var(--font-weight-static);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .popup-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    #stylistic-popup-compact {
+      margin-top: calc(0.6rem * var(--ui-scale));
+      display: grid;
+      gap: calc(0.45rem * var(--ui-scale));
+      color: #ffffff;
+      font-weight: var(--font-weight-dynamic);
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition:
+        max-height 0.15s cubic-bezier(0.42, 0, 0.58, 1),
+        opacity 0.15s cubic-bezier(0.42, 0, 0.58, 1);
+    }
+
+    #stylistic-popup-compact.visible {
+      max-height: calc(5rem * var(--ui-scale));
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .popup-row {
+      display: grid;
+      grid-template-columns: calc(3rem * var(--ui-scale)) 1fr;
+      gap: calc(0.65rem * var(--ui-scale));
+      align-items: start;
+    }
+
+    .popup-label {
+      white-space: nowrap;
+      opacity: 0.95;
+    }
+
+    .popup-value {
+      line-height: 1.2;
+      opacity: 0.95;
+    }
+
+    #stylistic-popup-detailed {
+      margin-top: calc(0.6rem * var(--ui-scale));
+      display: grid;
+      gap: calc(0.5rem * var(--ui-scale));
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition:
+        max-height 0.15s cubic-bezier(0.42, 0, 0.58, 1),
+        opacity 0.15s cubic-bezier(0.42, 0, 0.58, 1);
+    }
+
+    #stylistic-popup-detailed.visible {
+      max-height: calc(12rem * var(--ui-scale));
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .popup-detail-intro {
+      color: #ffffff;
+      opacity: 0.95;
+      font-weight: var(--font-weight-dynamic);
+    }
+
+    .popup-steps {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: calc(0.45rem * var(--ui-scale));
+      font-weight: var(--font-weight-dynamic);
+      color: #ffffff;
+    }
+
+    .popup-steps li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: calc(0.55rem * var(--ui-scale));
+      align-items: start;
+      line-height: 1.2;
+    }
+
+    .popup-arrow {
+      opacity: 0.95;
+    }
+
     /* --- Dev Mode Row --- */
     #Dev-mode-row {
-      display: flex;
+      display: none;
       justify-content: space-between;
       align-items: center;
       padding-bottom: calc(var(--section-gap) * var(--ui-scale));
@@ -476,6 +618,27 @@
     body[data-theme="dark"] .Dev-mode-label {
       color: var(--muted-dark);
     }
+
+    .dev-mode-controls {
+      display: flex;
+      align-items: center;
+      gap: calc(0.4rem * var(--ui-scale));
+    }
+
+    #dev-update-state {
+      font-size: calc(var(--text-xs) * var(--ui-scale));
+      border-radius: calc(var(--search-radius) * var(--ui-scale));
+      border: .15px solid var(--search-stroke);
+      background: var(--search-fill);
+      color: var(--fg);
+      padding: calc(0.2rem * var(--ui-scale)) calc(0.3rem * var(--ui-scale));
+    }
+
+    body[data-theme="dark"] #dev-update-state {
+      border-color: var(--search-stroke-dark);
+      background: var(--search-fill-dark);
+      color: var(--fg-dark);
+    }
   </style>
 </head>
 <body>
@@ -488,7 +651,14 @@
       </div>
 
       <div id="Dev-mode-row">
-        <div class="Dev-mode-label">Dev mode</div> 
+        <div class="Dev-mode-label">Dev mode</div>
+        <div class="dev-mode-controls">
+          <select id="dev-update-state">
+            <option value="auto">Update: Auto</option>
+            <option value="available">Update: Available</option>
+            <option value="current">Update: Current</option>
+          </select>
+        </div>
       </div>
     
     <div id="theme-row">
@@ -499,14 +669,8 @@
     </div>
 
     <div id="header">
-      <div id="font-info">
-        <div class="header-label">Selected font</div>
-        <div id="font-family">Select a text layer in Figma...</div>
-      </div>
-      <div>
-        <div class="header-label">Weight displayed</div>
-        <div id="font-style"></div>
-      </div>
+      <div class="header-label">Selected font</div>
+      <div id="font-family">Select a text layer in Figma...</div>
     </div>
 
     <div id="search-row">
@@ -527,6 +691,38 @@
     <div id="status-text"></div>
 
     <div id="glyph-grid"></div>
+    <div id="stylistic-popup-overlay" aria-live="polite">
+      <div id="stylistic-popup-card">
+        <div id="stylistic-popup-header">
+          <div id="stylistic-popup-title">Stylistic Set Required</div>
+          <div class="popup-controls">
+            <button type="button" class="popup-icon-btn" data-popup-control="help">?</button>
+            <button type="button" class="popup-icon-btn" data-popup-control="close">×</button>
+          </div>
+        </div>
+
+        <div id="stylistic-popup-compact" class="visible">
+          <div class="popup-row">
+            <div class="popup-label">Go to</div>
+            <div class="popup-value" id="popup-go-to">Typography → Type details → Details tab</div>
+          </div>
+          <div class="popup-row">
+            <div class="popup-label">Enable</div>
+            <div class="popup-value" id="popup-enable">Set 1</div>
+          </div>
+        </div>
+
+        <div id="stylistic-popup-detailed">
+          <div class="popup-detail-intro">To use this alternate glyph</div>
+          <ul class="popup-steps">
+            <li><span class="popup-arrow">→</span><span>Open the Typography section in the right panel.</span></li>
+            <li><span class="popup-arrow">→</span><span>Click the Type details icon.</span></li>
+            <li><span class="popup-arrow">→</span><span>Go to the Details tab.</span></li>
+            <li><span class="popup-arrow">→</span><span id="popup-enable-detailed">Under Stylistic sets, enable Set 1.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -535,6 +731,7 @@
     let currentFontFamily = '';
     let currentFontStyle = '';
     let stylisticSets = {};
+    let stylisticSetLabels = {};
     let selectedChar = null;
     let cursorPosition = null;
     let selectionStart = null;
@@ -545,9 +742,120 @@
     const statusDiv = document.getElementById('status-text');
     const grid = document.getElementById('glyph-grid');
     const fontFamilyDiv = document.getElementById('font-family');
-    const fontStyleDiv = document.getElementById('font-style');
     const glyphCountSpan = document.getElementById('glyph-count');
     const searchInput = document.getElementById('search-input');
+    const devModeRow = document.getElementById('Dev-mode-row');
+    const devUpdateStateSelect = document.getElementById('dev-update-state');
+    const updateRow = document.getElementById('update-row');
+    const updateVersionSpan = document.getElementById('update-version');
+    const updateLink = document.getElementById('update-link');
+    const stylisticPopupOverlay = document.getElementById('stylistic-popup-overlay');
+    const stylisticPopupCompact = document.getElementById('stylistic-popup-compact');
+    const stylisticPopupDetailed = document.getElementById('stylistic-popup-detailed');
+    const popupGoTo = document.getElementById('popup-go-to');
+    const popupEnable = document.getElementById('popup-enable');
+    const popupEnableDetailed = document.getElementById('popup-enable-detailed');
+    const popupHelpBtn = document.querySelector('[data-popup-control="help"]');
+
+    const LOCAL_SERVER_BASE_URL = 'http://localhost:3000';
+    const GITHUB_RELEASES_LATEST_URL = 'https://api.github.com/repos/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest';
+    const isFigmaRuntime = window.self !== window.top;
+    const isStandalonePreview = !isFigmaRuntime;
+    const urlParams = new URLSearchParams(window.location.search);
+    const forcedDevMode = urlParams.get('dev') === '1';
+    const previewUpdateParam = (urlParams.get('update') || '').toLowerCase();
+
+    const runtimeConfig = {
+      isDevBuild: isStandalonePreview || forcedDevMode,
+      enableDevTools: isStandalonePreview || forcedDevMode
+    };
+
+    function postPluginMessage(pluginMessage) {
+      if (!isFigmaRuntime) return;
+      parent.postMessage({ pluginMessage }, '*');
+    }
+
+    function applyDevModeVisibility() {
+      const visible = !!runtimeConfig.isDevBuild;
+      devModeRow.style.display = visible ? 'flex' : 'none';
+    }
+
+    function fallbackEnableLabel(ssTag, ssLabel) {
+      const cleanTag = typeof ssTag === 'string' ? ssTag.toLowerCase() : '';
+      const cleanLabel = typeof ssLabel === 'string' ? ssLabel.trim() : '';
+      if (/^ss\d{2}$/.test(cleanTag)) {
+        const setNumber = Number.parseInt(cleanTag.slice(2), 10);
+        if (cleanLabel) return `Set ${setNumber}. ${cleanLabel}`;
+        return `Set ${setNumber}`;
+      }
+      if (cleanLabel) return cleanLabel;
+      if (cleanTag) return cleanTag.toUpperCase();
+      return 'the required stylistic set';
+    }
+
+    function extractEnableLabelFromMessage(message) {
+      const match = /Enable\s+(.+?)\s+in\s+Text\s*>\s*Type/i.exec(String(message || ''));
+      return match ? match[1].trim() : '';
+    }
+
+    function resolveEnableLabel(msg) {
+      return (
+        (msg && typeof msg.enableLabel === 'string' && msg.enableLabel.trim()) ||
+        extractEnableLabelFromMessage(msg && msg.message) ||
+        fallbackEnableLabel(msg && msg.ssTag, msg && msg.ssLabel)
+      );
+    }
+
+    function setPopupDetailedMode(isDetailed) {
+      stylisticPopupCompact.classList.toggle('visible', !isDetailed);
+      stylisticPopupDetailed.classList.toggle('visible', isDetailed);
+      popupHelpBtn.textContent = isDetailed ? '‹' : '?';
+    }
+
+    function closeStylisticPopup() {
+      stylisticPopupOverlay.classList.remove('visible');
+      setPopupDetailedMode(false);
+    }
+
+    function showStylisticPopup(msg) {
+      const enableLabel = resolveEnableLabel(msg);
+      popupGoTo.textContent = 'Typography → Type details → Details tab';
+      popupEnable.textContent = enableLabel;
+      popupEnableDetailed.textContent = `Under Stylistic sets, enable ${enableLabel}.`;
+      setPopupDetailedMode(false);
+      stylisticPopupOverlay.classList.add('visible');
+    }
+
+    function handlePopupPointerDown(event) {
+      if (!stylisticPopupOverlay.classList.contains('visible')) return;
+
+      const control = event.target.closest('[data-popup-control]');
+      if (control) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (control.dataset.popupControl === 'help') {
+          const isDetailed = stylisticPopupDetailed.classList.contains('visible');
+          setPopupDetailedMode(!isDetailed);
+          return;
+        }
+        closeStylisticPopup();
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      closeStylisticPopup();
+    }
+
+    function handlePopupKeydown(event) {
+      if (!stylisticPopupOverlay.classList.contains('visible')) return;
+      if (event.key === 'Escape') {
+        closeStylisticPopup();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePopupPointerDown, true);
+    document.addEventListener('keydown', handlePopupKeydown);
 
     // --- NEW: Smart Screen Size Breakpoints ---
     // --- NEW: Smart Retina/Screen Breakpoints for Grid Columns ---
@@ -587,7 +895,9 @@
       }, '*');
     }
 
-    setInitialWindowSize(); // Run it immediately!
+    if (isFigmaRuntime) {
+      setInitialWindowSize(); // Run it immediately in Figma only
+    }
 
     function getColumnsPerRow() {
       const raw = getComputedStyle(document.documentElement)
@@ -611,7 +921,10 @@
         slice.forEach(glyph => {
           const button = document.createElement('button');
           button.className = 'glyph-btn';
-          button.title = `${glyph.name} (${glyph.hex})`;
+          const ssTitle = glyph.isAlternate && glyph.ssTag
+            ? ` — ${glyph.ssTag.toUpperCase()}${glyph.ssLabel ? ` (${glyph.ssLabel})` : ''}`
+            : '';
+          button.title = `${glyph.name} (${glyph.hex})${ssTitle}`;
           
           button.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg">
@@ -622,32 +935,33 @@
           button.onclick = () => {
             if (glyph.isAlternate) {
               const payload = {
-                type: 'replace-glyph'
+                type: 'replace-glyph',
+                isStylisticAlternate: true
               };
 
-              // Prefer the alternate's own unicode if present; otherwise fall back to the base glyph's unicode
-              const insertCode = (glyph.unicode !== null && glyph.unicode !== undefined)
-                ? glyph.unicode
-                : (glyph.baseUnicode !== null && glyph.baseUnicode !== undefined
-                  ? glyph.baseUnicode
-                  : null);
+              if (Number.isFinite(glyph.baseUnicode)) {
+                payload.unicode = glyph.baseUnicode;
+              }
+              if (glyph.ssTag) {
+                payload.ssTag = glyph.ssTag;
+              }
+              if (glyph.ssLabel) {
+                payload.ssLabel = glyph.ssLabel;
+              }
 
-              if (insertCode !== null) {
-                payload.unicode = insertCode;
+              if (payload.unicode === undefined) {
+                console.warn('Stylistic alternate is missing base unicode; skipping replace-glyph.', glyph);
+                return;
               }
-              if (glyph.glyphId !== null && glyph.glyphId !== undefined) {
-                payload.glyphId = glyph.glyphId;
-              }
-              parent.postMessage({ pluginMessage: payload }, '*');
+
+              postPluginMessage(payload);
             } else {
-              parent.postMessage({
-                pluginMessage: {
-                  type: 'insert-glyph',
-                  unicode: glyph.unicode,
-                  family: currentFontFamily,
-                  style: currentFontStyle
-                }
-              }, '*');
+              postPluginMessage({
+                type: 'insert-glyph',
+                unicode: glyph.unicode,
+                family: currentFontFamily,
+                style: currentFontStyle
+              });
             }
           };
 
@@ -781,12 +1095,14 @@
           ? String(glyph.unicode).toLowerCase()
           : '';
         const ssTag = (glyph.ssTag || '').toLowerCase();
+        const ssLabel = (glyph.ssLabel || '').toLowerCase();
 
         return (
           name.includes(query) ||
           hex.includes(normalizedHexQuery) ||
           unicodeDec.includes(query) ||
-          ssTag.includes(query)
+          ssTag.includes(query) ||
+          ssLabel.includes(query)
         );
       });
 
@@ -842,99 +1158,200 @@
       return name.replace(weightRegex, '').trim();
     }
 
-    window.onmessage = async (event) => {
-      const msg = event.data.pluginMessage;
+    function normalizeVersion(version) {
+      return String(version || '').trim().replace(/^v/i, '');
+    }
+
+    function setUpdateRowVisible(visible, latestVersion, latestUrl) {
+      if (visible) {
+        updateVersionSpan.textContent = latestVersion || 'unknown';
+        updateLink.href = latestUrl || 'https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest';
+        updateRow.style.display = 'flex';
+      } else {
+        updateRow.style.display = 'none';
+      }
+    }
+
+    function getDevUpdateState() {
+      if (!runtimeConfig.isDevBuild) return 'auto';
+      return devUpdateStateSelect.value || 'auto';
+    }
+
+    async function checkForUpdates() {
+      const forcedState = getDevUpdateState();
+      if (forcedState === 'available') {
+        setUpdateRowVisible(true, 'dev-preview', 'https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest');
+        return;
+      }
+      if (forcedState === 'current') {
+        setUpdateRowVisible(false);
+        return;
+      }
+
+      try {
+        const localRes = await fetch(`${LOCAL_SERVER_BASE_URL}/version`);
+        if (!localRes.ok) throw new Error(`Local version HTTP ${localRes.status}`);
+        const localData = await localRes.json();
+        const localVersion = normalizeVersion(localData.version);
+
+        const githubRes = await fetch(GITHUB_RELEASES_LATEST_URL);
+        if (!githubRes.ok) throw new Error(`GitHub version HTTP ${githubRes.status}`);
+        const githubData = await githubRes.json();
+        const latestVersion = normalizeVersion(githubData.tag_name);
+        const releaseUrl = githubData.html_url || 'https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest';
+
+        setUpdateRowVisible(localVersion !== latestVersion, latestVersion, releaseUrl);
+      } catch (err) {
+        setUpdateRowVisible(false);
+        console.log('Could not check for updates (server might be off or no internet).', err);
+      }
+    }
+
+    async function loadGlyphsForFont(family, style, selectionContext) {
+      fontFamilyDiv.textContent = cleanFontName(family);
+      statusDiv.textContent = 'Loading glyphs from local font server…';
+      glyphCountSpan.textContent = '';
+      grid.innerHTML = '';
+      searchInput.value = '';
+      userHasTypedQuery = false;
+
+      selectedChar = selectionContext?.selectedChar || null;
+      cursorPosition = typeof selectionContext?.cursorPosition === 'number' ? selectionContext.cursorPosition : null;
+      selectionStart = typeof selectionContext?.selectionStart === 'number' ? selectionContext.selectionStart : null;
+      selectionEnd = typeof selectionContext?.selectionEnd === 'number' ? selectionContext.selectionEnd : null;
+      isEditing = !!selectionContext?.isEditing;
+
+      currentFontFamily = family;
+      currentFontStyle = style;
+
+      const fetchUrl = `${LOCAL_SERVER_BASE_URL}/get-glyphs?family=${encodeURIComponent(family)}&style=${encodeURIComponent(style)}`;
+      const response = await fetch(fetchUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      currentFontFamily = data.fontFamily || family;
+      currentFontStyle = data.style || style;
+
+      fontFamilyDiv.textContent = cleanFontName(currentFontFamily);
+
+      allGlyphs = data.glyphs || [];
+      stylisticSets = data.stylisticSets || {};
+      stylisticSetLabels = data.stylisticSetLabels || {};
+      allGlyphsWithAlternates = Array.isArray(allGlyphs) ? allGlyphs.slice() : [];
+
+      const sets = stylisticSets || {};
+      for (const tag of Object.keys(sets)) {
+        const mapping = sets[tag] || {};
+        for (const key of Object.keys(mapping)) {
+          const baseUnicode = Number(key);
+          const alternates = mapping[key] || [];
+          alternates.forEach(alt => {
+            allGlyphsWithAlternates.push({
+              ...alt,
+              isAlternate: true,
+              baseUnicode,
+              ssTag: tag,
+              ssLabel: stylisticSetLabels[tag] || ''
+            });
+          });
+        }
+      }
+
+      function glyphSortCode(glyph) {
+        if (glyph.isAlternate) return glyph.baseUnicode ?? null;
+        return glyph.unicode ?? null;
+      }
+
+      allGlyphsWithAlternates.sort((a, b) => {
+        const aCode = glyphSortCode(a);
+        const bCode = glyphSortCode(b);
+
+        if (aCode !== null && bCode !== null && aCode !== bCode) {
+          return aCode - bCode;
+        }
+        if (aCode !== null && bCode === null) return -1;
+        if (aCode === null && bCode !== null) return 1;
+
+        if (!!a.isAlternate !== !!b.isAlternate) {
+          return a.isAlternate ? 1 : -1;
+        }
+        return 0;
+      });
+
+      renderForSelectionOrAll();
+      statusDiv.textContent = '';
+    }
+
+    async function loadRandomPreviewFont() {
+      try {
+        statusDiv.textContent = 'Loading random font for preview…';
+        const fontsRes = await fetch(`${LOCAL_SERVER_BASE_URL}/fonts`);
+        if (!fontsRes.ok) throw new Error(`Fonts HTTP ${fontsRes.status}`);
+        const fontsData = await fontsRes.json();
+        const dictionary = fontsData.dictionary || {};
+        const families = Object.keys(dictionary);
+
+        if (!families.length) {
+          throw new Error('No families returned by local server.');
+        }
+
+        const randomFamily = families[Math.floor(Math.random() * families.length)];
+        const styles = Object.keys(dictionary[randomFamily] || {});
+        const randomStyle = styles.includes('Regular')
+          ? 'Regular'
+          : (styles[Math.floor(Math.random() * styles.length)] || 'Regular');
+
+        await loadGlyphsForFont(randomFamily, randomStyle, {
+          selectedChar: null,
+          cursorPosition: null,
+          selectionStart: null,
+          selectionEnd: null,
+          isEditing: false
+        });
+      } catch (error) {
+        statusDiv.textContent = 'Error: Could not load random preview font. Is the local server running on :3000?';
+        console.error(error);
+      }
+    }
+
+    async function handlePluginMessage(msg) {
       if (!msg) return;
+
+      if (msg.type === 'runtime-config') {
+        runtimeConfig.isDevBuild = !!msg.isDevBuild;
+        runtimeConfig.enableDevTools = !!msg.enableDevTools;
+        applyDevModeVisibility();
+        await checkForUpdates();
+        return;
+      }
 
       if (msg.type === 'status') {
         fontFamilyDiv.textContent = msg.message;
-        fontStyleDiv.textContent = '';
         statusDiv.textContent = '';
         glyphCountSpan.textContent = '';
         grid.innerHTML = '';
         searchInput.value = '';
+        return;
       }
-      else if (msg.type === 'font-selected') {
-        // Apply the cleanup function to the UI display
-        fontFamilyDiv.textContent = cleanFontName(msg.family);
-        fontStyleDiv.textContent = msg.style;
-        statusDiv.textContent = 'Loading glyphs from local font server…';
-        glyphCountSpan.textContent = '';
-        grid.innerHTML = '';
-        searchInput.value = '';
 
-        selectedChar = msg.selectedChar || null;
-        cursorPosition = typeof msg.cursorPosition === 'number' ? msg.cursorPosition : null;
-        selectionStart = typeof msg.selectionStart === 'number' ? msg.selectionStart : null;
-        selectionEnd = typeof msg.selectionEnd === 'number' ? msg.selectionEnd : null;
-        isEditing = !!msg.isEditing;
-        userHasTypedQuery = false;
+      if (msg.type === 'stylistic-set-hint') {
+        const hint = msg.message || '';
+        statusDiv.textContent = hint;
+        showStylisticPopup(msg);
+        return;
+      }
 
-        // Keep the exact real names for the server fetch and insert payload
-        currentFontFamily = msg.family;
-        currentFontStyle = msg.style;
-
-        const fetchUrl = `http://localhost:3000/get-glyphs?family=${encodeURIComponent(msg.family)}&style=${encodeURIComponent(msg.style)}`;
-
+      if (msg.type === 'font-selected') {
         try {
-          const response = await fetch(fetchUrl);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-          const data = await response.json();
-
-          // Prefer server-reported names if available
-          currentFontFamily = data.fontFamily || msg.family;
-          currentFontStyle = data.style || msg.style;
-
-          // Apply the cleanup function again when the server responds
-          fontFamilyDiv.textContent = cleanFontName(currentFontFamily);
-          fontStyleDiv.textContent = currentFontStyle;
-
-          allGlyphs = data.glyphs || [];
-          stylisticSets = data.stylisticSets || {};
-
-          allGlyphsWithAlternates = Array.isArray(allGlyphs) ? allGlyphs.slice() : [];
-
-          const sets = stylisticSets || {};
-          for (const tag of Object.keys(sets)) {
-            const mapping = sets[tag] || {};
-            for (const key of Object.keys(mapping)) {
-              const baseUnicode = Number(key);
-              const alternates = mapping[key] || [];
-              alternates.forEach(alt => {
-                allGlyphsWithAlternates.push({
-                  ...alt,
-                  isAlternate: true,
-                  baseUnicode
-                });
-              });
-            }
-          }
-
-          function glyphSortCode(glyph) {
-            if (glyph.isAlternate) return glyph.baseUnicode ?? null;
-            return glyph.unicode ?? null;
-          }
-
-          allGlyphsWithAlternates.sort((a, b) => {
-            const aCode = glyphSortCode(a);
-            const bCode = glyphSortCode(b);
-
-            if (aCode !== null && bCode !== null && aCode !== bCode) {
-              return aCode - bCode;
-            }
-            if (aCode !== null && bCode === null) return -1;
-            if (aCode === null && bCode !== null) return 1;
-
-            if (!!a.isAlternate !== !!b.isAlternate) {
-              return a.isAlternate ? 1 : -1; // base glyph first, then alternates
-            }
-            return 0;
+          await loadGlyphsForFont(msg.family, msg.style, {
+            selectedChar: msg.selectedChar || null,
+            cursorPosition: msg.cursorPosition,
+            selectionStart: msg.selectionStart,
+            selectionEnd: msg.selectionEnd,
+            isEditing: msg.isEditing
           });
-
-          renderForSelectionOrAll();
-
-          statusDiv.textContent = '';
         } catch (error) {
           statusDiv.textContent = `Error: Cannot load local file for ${msg.family}.`;
           console.error(error);
@@ -946,38 +1363,36 @@
           updateGlyphCount();
         }
       }
-      // --- NEW: Check GitHub for Updates ---
-    async function checkForUpdates() {
-      try {
-        // 1. Get the local server version we just set up
-        const localRes = await fetch('http://localhost:3000/version');
-        const localData = await localRes.json();
-        const localVersion = localData.version;
-
-        // 2. Ask GitHub for the latest release data
-        // REPLACE THESE WITH YOUR GITHUB DETAILS!
-        const githubRes = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO_NAME/releases/latest');
-        const githubData = await githubRes.json();
-        
-        // GitHub tags usually have a 'v' (like v1.0.1), so we remove it to compare easily
-        const latestVersion = githubData.tag_name.replace('v', '');
-
-        // 3. If versions don't match, unhide the update row!
-        if (localVersion !== latestVersion) {
-          document.getElementById('update-version').textContent = latestVersion;
-          document.getElementById('update-link').href = githubData.html_url; // Links to your releases page
-          
-          // Change display from 'none' to 'flex' to reveal the UI
-          document.getElementById('update-row').style.display = 'flex';
-        }
-      } catch (err) {
-        console.log("Could not check for updates (server might be off or no internet).", err);
-      }
     }
 
-    // Run this check the millisecond the plugin opens
-    checkForUpdates();
+    window.onmessage = async (event) => {
+      const msg = event.data.pluginMessage;
+      await handlePluginMessage(msg);
     };
+
+    devUpdateStateSelect.addEventListener('change', () => {
+      if (!runtimeConfig.isDevBuild) return;
+      checkForUpdates();
+    });
+
+    function initializeRuntime() {
+      const validForcedUpdateState = ['auto', 'available', 'current'];
+      if (validForcedUpdateState.includes(previewUpdateParam)) {
+        devUpdateStateSelect.value = previewUpdateParam;
+      }
+
+      applyDevModeVisibility();
+
+      if (isFigmaRuntime) {
+        postPluginMessage({ type: 'request-runtime-config' });
+      } else {
+        loadRandomPreviewFont();
+      }
+
+      checkForUpdates();
+    }
+
+    initializeRuntime();
   </script>
 </body>
 </html>
