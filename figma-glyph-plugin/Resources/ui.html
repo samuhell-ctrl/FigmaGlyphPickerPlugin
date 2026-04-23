@@ -107,9 +107,8 @@
 
     /* Dark scrollbars inside the plugin UI */
     body {
-      overflow-y: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: var(--scroll-thumb-dark) var(--scroll-track-dark); /* thumb track */
+      overflow-y: auto;
+      scrollbar-width: none; /* Hide scrollbar Firefox */
     }
 
     body[data-theme="light"] {
@@ -117,32 +116,7 @@
     }
 
     body::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    body::-webkit-scrollbar-track {
-      background: var(--scroll-track-dark);
-    }
-
-    body[data-theme="light"]::-webkit-scrollbar-track {
-      background: var(--scroll-track);
-    }
-
-    body[data-theme="dark"]::-webkit-scrollbar-track {
-      background: var(--scroll-track-dark);
-    }
-
-    body::-webkit-scrollbar-thumb {
-      background-color: var(--scroll-thumb-dark);
-      border-radius: 999px;
-    }
-
-    body[data-theme="light"]::-webkit-scrollbar-thumb {
-      background-color: var(--scroll-thumb);
-    }
-
-    body[data-theme="dark"]::-webkit-scrollbar-thumb {
-      background-color: var(--scroll-thumb-dark);
+      display: none; /* Hide scrollbar Chrome/Safari/Edge */
     }
 
     .container {
