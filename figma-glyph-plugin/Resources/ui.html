@@ -13,7 +13,7 @@
       /* Layout */
       --ui-scale: 1.3;              /* overall scale */
       --panel-width-rem: 12.75rem;   /* reference width from Figma */
-      --panel-pad-top: .7rem;
+      --panel-pad-top: .0rem;
       --panel-pad-x: 0.7rem;
       --section-gap: .5rem;        /* vertical spacing between major sections */
 
@@ -105,18 +105,22 @@
       color: var(--fg-dark);
     }
 
-    /* Dark scrollbars inside the plugin UI */
+    /* Keep root fixed; scroll inside outer content wrapper */
     body {
+      overflow: hidden;
+    }
+
+    body > .container {
+      width: 100%;
+      max-height: calc(100vh - (var(--panel-pad-top) * var(--ui-scale)));
       overflow-y: auto;
-      scrollbar-width: none; /* Hide scrollbar Firefox */
+      scrollbar-width: none; /* Firefox */
     }
 
-    body[data-theme="light"] {
-      scrollbar-color: var(--scroll-thumb) var(--scroll-track);
-    }
-
-    body::-webkit-scrollbar {
-      display: none; /* Hide scrollbar Chrome/Safari/Edge */
+    body > .container::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none; /* WebKit */
     }
 
     .container {
@@ -400,11 +404,12 @@
     #dev-mode-row {
       display: none;
       justify-content: space-between;
+      padding-top: .7rem;
       align-items: center;
       padding-bottom: calc(0.25rem * var(--ui-scale));
     }
 
-    body[data-dev-build="true"] #dev-mode-row {
+    body[data-dev-build="false"] #dev-mode-row {
       display: flex;
     }
 
@@ -420,10 +425,34 @@
       text-transform: uppercase;
     }
 
-    body[data-theme="dark"] .dev-badge {
-      color: #fde68a;
-      background: rgba(250, 204, 21, 0.15);
-      border-color: rgba(250, 204, 21, 0.35);
+    #version-mode-row {
+      display: none;
+      justify-content: space-between;
+      padding-top: .7rem;
+      align-items: center;
+      padding-bottom: 0rem;
+    }
+
+    body[data-dev-build="true"] #version-mode-row {
+      display: flex;
+    }
+
+    .version-badge {
+      font-size: .7rem;
+      font-weight: var(--font-weight-static);
+      color: #004cff;
+      background: rgba(21, 82, 250, 0.2);
+      border: 1px solid rgba(21, 113, 250, 0.5);
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    body[data-theme="dark"] .version-badge {
+      color: #8baeff;
+      background: rgba(21, 82, 250, 0.15);
+      border-color: rgba(21, 113, 250, 0.35);
     }
 
     .update-label, .update-link {
@@ -613,6 +642,10 @@
       <div id="dev-mode-row">
         <div class="update-label">Build channel</div>
         <div class="dev-badge">Dev mode</div>
+      </div>
+
+      <div id="version-mode-row">
+        <div class="version-badge">1.1.2</div>
       </div>
 
     <div id="theme-row">
