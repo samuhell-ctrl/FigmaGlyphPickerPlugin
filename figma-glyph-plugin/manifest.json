@@ -1,14 +1,14 @@
 {
   "name": "Local Glyph Picker",
-  "id": "local-glyph-picker-mvp",
+  "id": "1628033468501128792",
   "api": "1.0.0",
   "main": "Resources/code.js",
   "ui": "Resources/ui.html",
   "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
   "networkAccess": {
-    "allowedDomains": ["none"],
-    "devAllowedDomains": [
-      "http://localhost:3000"
-    ]
+    "allowedDomains": ["http://localhost:3000", "https://api.github.com"],
+    "devAllowedDomains": ["http://localhost:3000", "https://api.github.com"],
+    "reasoning": "This plugin requires a locally installed companion app running on localhost:3000 to access system fonts and extract glyph data. Figma's sandboxed environment cannot read local font files directly, so the companion server acts as a bridge to the OS font library."
   }
 }
