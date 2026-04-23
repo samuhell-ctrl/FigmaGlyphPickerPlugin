@@ -81,21 +81,29 @@ jobs:
         working-directory: ./figma-glyph-server
         run: npm install
 
-      - name: 4. Build the .dmg and .zip
+      - name: 4. Build mac artifacts (.dmg + .zip)
         working-directory: ./figma-glyph-server
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: 5. Package Main Mac Bundle
+      - name: 5. Package Main Mac Bundle (ZIP-first user flow)
         run: |
           mkdir -p staging/FigmaGlyphPicker_Mac
           cp -r figma-glyph-plugin staging/FigmaGlyphPicker_Mac/
-          cp figma-glyph-server/dist/*.dmg staging/FigmaGlyphPicker_Mac/
-          cd staging
-          # Named with 00_ to force it to the top of the GitHub Assets list
-          zip -r ../00_DOWNLOAD_Mac_Bundle_${{ env.APP_VERSION }}.zip FigmaGlyphPicker_Mac
+          APP_PATH=$(find figma-glyph-server/dist -type d -name "*.app" -print -quit)
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app bundle found in figma-glyph-server/dist"
+            exit 1
+          fi
+          cp -R "$APP_PATH" staging/FigmaGlyphPicker_Mac/
+          # Named with 00_ to force it to the top of the GitHub Assets list.
+          # ZIP-first mac onboarding: users can run the .app from any folder
+          # and use right-click > Open on first launch if Gatekeeper prompts.
+          # Use ditto to preserve symlinks inside .app bundles.
+          rm -f 00_DOWNLOAD_Mac_Bundle_${{ env.APP_VERSION }}.zip
+          ditto -c -k --sequesterRsrc --keepParent staging/FigmaGlyphPicker_Mac 00_DOWNLOAD_Mac_Bundle_${{ env.APP_VERSION }}.zip
 
       - name: 6. Publish Mac to Releases
         uses: softprops/action-gh-release@v2
