@@ -8,8 +8,6 @@ Because Figma runs in a browser environment with strict security sandboxing, it 
 
 ## 📥 Download & Installation
 
-You don't need to build this from scratch! Our automated cloud pipeline packages everything you need into simple ZIP files.
-
 ### 🖥️ Windows
 **👉 [Download the Windows Version](https://github.com/samuhell-ctrl/FigmaGlyphPickerPlugin/releases/latest)**
 
