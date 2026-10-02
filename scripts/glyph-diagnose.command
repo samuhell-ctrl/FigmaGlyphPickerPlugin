@@ -199,10 +199,10 @@ done
 
 echo ""
 echo "--- other font manager PROCESSES ---"
-ps aux 2>/dev/null | grep -iE "fontbase|rightfont|typeface|fontexplorer|fontagent|monotype|ninja" | grep -v grep || echo "(none running)"
+ps aux 2>/dev/null | grep -iE "fontbase|rightfont|typeface|fontexplorer|fontagent|monotype|ninja|connect" | grep -v grep || echo "(none running)"
 echo ""
 echo "--- font manager APPS INSTALLED ---"
-ls -1 /Applications 2>/dev/null | grep -iE "font|suitcase|extensis|typeface" || echo "(none installed)"
+ls -1 /Applications 2>/dev/null | grep -iE "font|suitcase|extensis|typeface|monotype|connect" || echo "(none installed)"
 
 # ---------------------------------------------------------------------
 section "6. WHERE THE FONT FILES ACTUALLY LIVE (SPOTLIGHT)"
