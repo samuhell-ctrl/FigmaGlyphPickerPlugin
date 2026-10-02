@@ -98,6 +98,11 @@ jobs:
             exit 1
           fi
           cp -R "$APP_PATH" staging/FigmaGlyphPicker_Mac/
+          # Installer removes stale copies (each one auto-launches at login
+          # and can win the race for port 3000) and clears quarantine.
+          cp scripts/install-mac.command staging/FigmaGlyphPicker_Mac/
+          cp scripts/glyph-diagnose.command staging/FigmaGlyphPicker_Mac/
+          chmod +x staging/FigmaGlyphPicker_Mac/*.command
           # Named with 00_ to force it to the top of the GitHub Assets list.
           # ZIP-first mac onboarding: users can run the .app from any folder
           # and use right-click > Open on first launch if Gatekeeper prompts.
