@@ -102,6 +102,7 @@ function collectAdobeFontFilesRecursively(rootDirs) {
             }
 
             for (const entry of entries) {
+                if (SKIP_DIR_NAMES.has(entry)) continue;
                 const full = path.join(current, entry);
                 stack.push(full);
             }
@@ -116,96 +117,266 @@ function collectAdobeFontFilesRecursively(rootDirs) {
     return results;
 }
 
-function getOnDemandFallbackFontDirectories() {
-    const home = process.env.HOME || process.env.USERPROFILE || '';
+// ==========================================
+// FONT SOURCE DISCOVERY
+// ==========================================
+// Fonts reach the OS from three kinds of place:
+//   standard - the OS font folders a user installs into directly
+//   adobe    - Creative Cloud livetype cache
+//   manager  - third-party font managers (Monotype Connect, Extensis
+//              Connect Fonts, Suitcase Fusion, FontBase, ...) which
+//              activate fonts through CoreText from their own vault.
+//              Figma sees those fonts because it asks CoreText; walking
+//              only the standard folders misses them entirely.
+const SOURCE_PRIORITY = { standard: 3, adobe: 2, manager: 1 };
+
+// Vault subtrees holding previews, backups and scratch copies rather than
+// canonical font files.
+const SKIP_DIR_NAMES = new Set([
+    'DocPreviewsCache', 'panel-previews', 'backups', 'temp', 'Caches', 'QuickMatch'
+]);
+
+function getUserHome() {
+    return process.env.HOME || process.env.USERPROFILE || '';
+}
+
+function existingDirs(candidates) {
+    const seen = new Set();
+    const out = [];
+    for (const dir of candidates) {
+        if (!dir || seen.has(dir)) continue;
+        seen.add(dir);
+        try {
+            if (fs.statSync(dir).isDirectory()) out.push(dir);
+        } catch {
+            // Not present on this machine.
+        }
+    }
+    return out;
+}
+
+function getStandardFontDirectories() {
+    const home = getUserHome();
+    const candidates = [];
+
+    if (process.platform === 'darwin') {
+        if (home) candidates.push(path.join(home, 'Library', 'Fonts'));
+        candidates.push('/Library/Fonts', '/System/Library/Fonts', '/Network/Library/Fonts');
+    } else if (process.platform === 'win32') {
+        candidates.push(path.join(process.env.WINDIR || 'C:\\Windows', 'Fonts'));
+        if (process.env.LOCALAPPDATA) {
+            candidates.push(path.join(process.env.LOCALAPPDATA, 'Microsoft', 'Windows', 'Fonts'));
+        }
+    } else {
+        if (home) {
+            candidates.push(path.join(home, '.fonts'));
+            candidates.push(path.join(home, '.local', 'share', 'fonts'));
+        }
+        candidates.push('/usr/share/fonts', '/usr/local/share/fonts');
+    }
+
+    return existingDirs(candidates);
+}
+
+function getFontManagerDirectories() {
+    const home = getUserHome();
     if (!home) return [];
 
+    // Monotype Connect and Extensis Connect Fonts are the same product and
+    // share this vault path; Suitcase Fusion is its former name.
     const candidates = [
-        path.join(home, 'Library', 'Fonts'),
-        path.join(
-            home,
-            'Library',
-            'Mobile Documents',
-            'com~apple~CloudDocs',
-            'Documents',
-            'Ressources',
-            'Fonts'
-        )
+        path.join(home, 'Library', 'Extensis', 'Connect Fonts'),
+        path.join(home, 'Library', 'Extensis', 'Suitcase Fusion'),
+        path.join(home, 'Library', 'Application Support', 'Extensis'),
+        path.join(home, 'Library', 'Application Support', 'Monotype', 'Monotype Connect'),
+        path.join(home, 'Library', 'Application Support', 'FontBase'),
+        path.join(home, 'Library', 'Application Support', 'RightFont'),
+        path.join(home, 'Library', 'Application Support', 'Typeface')
     ];
 
-    return candidates.filter((p) => fs.existsSync(p));
+    return existingDirs(candidates);
+}
+
+function getConfigFilePath() {
+    const home = getUserHome();
+    return home ? path.join(home, '.figma-glyph-server', 'config.json') : '';
+}
+
+// Extra directories the user can add without a new build, via
+// GLYPH_EXTRA_FONT_DIRS or ~/.figma-glyph-server/config.json
+function getConfiguredFontDirectories() {
+    const dirs = [];
+
+    const fromEnv = process.env.GLYPH_EXTRA_FONT_DIRS;
+    if (fromEnv) dirs.push(...fromEnv.split(path.delimiter));
+
+    const configPath = getConfigFilePath();
+    if (configPath) {
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            if (Array.isArray(config.extraFontDirectories)) {
+                dirs.push(...config.extraFontDirectories);
+            }
+        } catch {
+            // No config file, or unreadable - not an error.
+        }
+    }
+
+    return existingDirs(dirs.map((d) => String(d || '').trim()).filter(Boolean));
+}
+
+function getAllFontSources() {
+    return [
+        { kind: 'standard', dirs: getStandardFontDirectories() },
+        { kind: 'adobe', dirs: getAdobeFontDirectories() },
+        { kind: 'manager', dirs: getFontManagerDirectories() },
+        // Explicitly configured directories carry the same weight as a
+        // direct install, because the user asked for them by name.
+        { kind: 'standard', dirs: getConfiguredFontDirectories() }
+    ];
+}
+
+// ==========================================
+// INDEXING
+// ==========================================
+// "family\u0000style" -> { priority, revision }, so a later file can decide
+// whether it beats the one already mapped.
+const fontEntryMeta = new Map();
+// Every path already parsed, so a rescan only opens new files.
+const indexedFontFiles = new Set();
+
+function getFontRevision(font) {
+    const revision = font.tables && font.tables.head && font.tables.head.fontRevision;
+    return typeof revision === 'number' && isFinite(revision) ? revision : 0;
+}
+
+function registerFontFile(filePath, sourceKind) {
+    if (indexedFontFiles.has(filePath)) return false;
+    indexedFontFiles.add(filePath);
+
+    const lower = filePath.toLowerCase();
+    if (!lower.endsWith('.ttf') && !lower.endsWith('.otf')) return false;
+
+    let font;
+    try {
+        font = opentype.loadSync(filePath);
+    } catch {
+        return false; // Corrupted or unsupported.
+    }
+
+    const family = resolveDictionaryFamily(font);
+    if (!family) return false;
+    const style = resolveDictionaryStyle(font);
+
+    const priority = SOURCE_PRIORITY[sourceKind] || 0;
+    const revision = getFontRevision(font);
+    const key = family + '\u0000' + style;
+    const existing = fontEntryMeta.get(key);
+
+    // A font manager vault keeps several versions of the same face side by
+    // side, and a directly installed face should beat a vault copy.
+    // Highest priority wins; ties go to the newer fontRevision.
+    if (existing && (existing.priority > priority ||
+        (existing.priority === priority && existing.revision >= revision))) {
+        return false;
+    }
+
+    if (!fontDictionary[family]) fontDictionary[family] = {};
+    fontDictionary[family][style] = filePath;
+    fontEntryMeta.set(key, { priority, revision });
+    return true;
 }
 
 async function buildFontDictionary() {
     console.log("--------------------------------------------------");
-    console.log("Scanning OS for system fonts and Adobe Creative Cloud fonts. This may take a minute...");
-    
+    console.log("Scanning for system, Adobe and font-manager fonts. This may take a minute...");
+
     try {
-        const systemFontPaths = await getSystemFonts();
-        const adobeDirs = getAdobeFontDirectories();
-        const adobeFontPaths = collectAdobeFontFilesRecursively(adobeDirs);
-
-        const combinedPathsSet = new Set();
-        for (const p of systemFontPaths) {
-            combinedPathsSet.add(p);
-        }
-        for (const p of adobeFontPaths) {
-            combinedPathsSet.add(p);
-        }
-
-        const allFontPaths = Array.from(combinedPathsSet);
-
-        console.log(`Found ${allFontPaths.length} unique font files (system + Adobe). Indexing OpenType metadata...`);
-
-        let successCount = 0;
-
-        for (const filePath of allFontPaths) {
-            try {
-                const lowerPath = filePath.toLowerCase();
-                if (!lowerPath.endsWith('.ttf') && !lowerPath.endsWith('.otf')) {
-                    continue;
-                }
-
-                const font = opentype.loadSync(filePath);
-                const family = resolveDictionaryFamily(font);
-                const style = resolveDictionaryStyle(font);
-
-                if (family) {
-                    if (!fontDictionary[family]) {
-                        fontDictionary[family] = {};
-                    }
-                    
-                    fontDictionary[family][style] = filePath;
-                    successCount++;
-                    
-                    if (successCount % 200 === 0) {
-                        console.log(`... Mapped ${successCount} font styles...`);
-                    }
-                }
-            } catch (err) {
-                // Skip corrupted or unsupported fonts
+        const sources = getAllFontSources();
+        for (const source of sources) {
+            for (const dir of source.dirs) {
+                console.log("  [" + source.kind + "] " + dir);
             }
         }
 
-        console.log(`Initialization Complete! Mapped ${successCount} total font styles.`);
-        console.log("--------------------------------------------------");
+        let scanned = 0;
+        let mapped = 0;
 
+        let systemFontPaths = [];
+        try {
+            systemFontPaths = await getSystemFonts();
+        } catch (err) {
+            console.warn("get-system-fonts failed, falling back to directory scan:", err.message);
+        }
+        for (const filePath of systemFontPaths) {
+            scanned++;
+            if (registerFontFile(filePath, 'standard')) mapped++;
+        }
+
+        for (const source of sources) {
+            for (const filePath of collectAdobeFontFilesRecursively(source.dirs)) {
+                scanned++;
+                if (registerFontFile(filePath, source.kind)) mapped++;
+            }
+        }
+
+        console.log("Initialization Complete! Scanned " + scanned + " files, mapped " +
+            mapped + " styles across " + Object.keys(fontDictionary).length + " families.");
+        console.log("--------------------------------------------------");
     } catch (error) {
         console.error("Failed to scan system fonts:", error);
     }
 }
 
+let lastRescanAt = 0;
+const RESCAN_MIN_INTERVAL_MS = 5000;
+
+// Picks up fonts installed or activated since the last scan. Enumeration is
+// cheap; only files never parsed before get opened.
+function rescanFontDirectories(reason) {
+    const now = Date.now();
+    if (now - lastRescanAt < RESCAN_MIN_INTERVAL_MS) return 0;
+    lastRescanAt = now;
+
+    let added = 0;
+    for (const source of getAllFontSources()) {
+        for (const filePath of collectAdobeFontFilesRecursively(source.dirs)) {
+            if (registerFontFile(filePath, source.kind)) added++;
+        }
+    }
+
+    if (added) console.log("Rescan (" + reason + ") mapped " + added + " new font style(s).");
+    return added;
+}
+
 function pickEnglishName(nameRecord) {
     if (!nameRecord || typeof nameRecord !== 'object') return '';
-    if (typeof nameRecord.en === 'string' && nameRecord.en.trim()) return nameRecord.en.trim();
 
-    const fallbackLang = Object.keys(nameRecord).find((lang) => {
-        const value = nameRecord[lang];
-        return typeof value === 'string' && value.trim();
-    });
+    const valueFor = (lang) => {
+        const v = nameRecord[lang];
+        return typeof v === 'string' && v.trim() ? v.trim() : '';
+    };
 
-    if (!fallbackLang) return '';
-    return String(nameRecord[fallbackLang]).trim();
+    // Pin to English so dictionary keys do not shift with the machine
+    // locale - a French Mac otherwise keys styles as "Gras" or "Leger".
+    const exact = valueFor('en');
+    if (exact) return exact;
+
+    const englishVariants = Object.keys(nameRecord)
+        .filter((lang) => /^en([-_]|$)/i.test(lang))
+        .sort();
+    for (const lang of englishVariants) {
+        const v = valueFor(lang);
+        if (v) return v;
+    }
+
+    // No English record at all: fall back deterministically rather than
+    // depending on object key order.
+    for (const lang of Object.keys(nameRecord).sort()) {
+        const v = valueFor(lang);
+        if (v) return v;
+    }
+    return '';
 }
 
 function resolveDictionaryFamily(font) {
@@ -226,48 +397,39 @@ function normalizeFontKey(value) {
     return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function tryPopulateFamilyFromFallbackScan(requestedFamily) {
-    const requestedNormalized = normalizeFontKey(requestedFamily);
-    if (!requestedNormalized) return null;
+// Exact hit first, then the closest normalized prefix match.
+function resolveFamilyEntry(family) {
+    if (fontDictionary[family]) {
+        return { resolvedFamily: family, familyDict: fontDictionary[family] };
+    }
 
-    const roots = getOnDemandFallbackFontDirectories();
-    if (!roots.length) return null;
+    const requested = String(family).toLowerCase();
+    const requestedNormalized = normalizeFontKey(family);
+    const allFamilies = Object.keys(fontDictionary);
 
-    const fallbackPaths = collectAdobeFontFilesRecursively(roots);
-    console.log(`Fallback scan for '${requestedFamily}' across ${fallbackPaths.length} files...`);
-    const matchedFamilies = Object.create(null);
+    const candidates = allFamilies.filter((key) =>
+        normalizeFontKey(key).startsWith(requestedNormalized));
 
-    for (const filePath of fallbackPaths) {
-        const lower = filePath.toLowerCase();
-        if (!lower.endsWith('.ttf') && !lower.endsWith('.otf')) continue;
+    let fallbackKey = null;
 
-        const basenameNormalized = normalizeFontKey(path.basename(filePath, path.extname(filePath)));
-        if (!basenameNormalized.includes(requestedNormalized)) continue;
-
-        try {
-            const font = opentype.loadSync(filePath);
-            const family = resolveDictionaryFamily(font);
-            const style = resolveDictionaryStyle(font);
-            const familyNormalized = normalizeFontKey(family);
-            if (!family || !familyNormalized.startsWith(requestedNormalized)) continue;
-
-            if (!matchedFamilies[family]) matchedFamilies[family] = {};
-            matchedFamilies[family][style] = filePath;
-        } catch {
-            // Ignore broken fallback candidates.
+    if (candidates.length > 0) {
+        const regularCandidates = candidates.filter((k) => k.toLowerCase().includes('regular'));
+        if (regularCandidates.length > 0) {
+            regularCandidates.sort((a, b) => a.length - b.length);
+            fallbackKey = regularCandidates[0];
+        } else {
+            candidates.sort((a, b) => a.length - b.length);
+            fallbackKey = candidates[0];
         }
+    } else {
+        fallbackKey = allFamilies.find((key) => key.toLowerCase() === requested) ||
+            allFamilies.find((key) => key.toLowerCase().includes(requested));
     }
 
-    const candidates = Object.keys(matchedFamilies);
-    if (!candidates.length) {
-        console.log(`Fallback scan found no matches for '${requestedFamily}'.`);
-        return null;
-    }
-    candidates.sort((a, b) => a.length - b.length);
+    if (!fallbackKey) return { resolvedFamily: family, familyDict: null };
 
-    const resolvedFamily = candidates[0];
-    fontDictionary[resolvedFamily] = matchedFamilies[resolvedFamily];
-    return resolvedFamily;
+    console.log("Family '" + family + "' not found, using closest match '" + fallbackKey + "'.");
+    return { resolvedFamily: fallbackKey, familyDict: fontDictionary[fallbackKey] };
 }
 
 // ==========================================
@@ -278,6 +440,18 @@ app.get('/fonts', (req, res) => {
         message: "Font Dictionary Status",
         totalFamilies: Object.keys(fontDictionary).length,
         dictionary: fontDictionary
+    });
+});
+
+// Lets the tray app (or a user) pick up newly installed fonts without a
+// restart. Throttled internally so it cannot be hammered.
+app.get('/rescan', (req, res) => {
+    const added = rescanFontDirectories('manual request');
+    res.json({
+        added,
+        totalFamilies: Object.keys(fontDictionary).length,
+        directories: getAllFontSources()
+            .flatMap((source) => source.dirs.map((dir) => ({ kind: source.kind, dir })))
     });
 });
 
@@ -701,60 +875,14 @@ app.get('/get-glyphs', (req, res) => {
         return res.status(400).json({ error: "Missing family or style parameters." });
     }
 
-    // 1. Look up the font in our OS dictionary (with a fallback for close matches, e.g. variable fonts)
-    let resolvedFamily = family;
-    let familyDict = fontDictionary[resolvedFamily];
+    // 1. Resolve the family. If it misses, the font may have been installed
+    //    or activated by a font manager since the last scan, so rescan once
+    //    and try again before giving up.
+    let { resolvedFamily, familyDict } = resolveFamilyEntry(family);
 
     if (!familyDict) {
-        const requested = family.toLowerCase();
-        const requestedNormalized = normalizeFontKey(requested);
-        const allFamilies = Object.keys(fontDictionary);
-
-        // Collect all candidates whose normalized name starts with the requested normalized name
-        const candidates = allFamilies.filter(key => {
-            const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-            return normalizedKey.startsWith(requestedNormalized);
-        });
-
-        let fallbackKey = null;
-
-        if (candidates.length > 0) {
-            // Prefer names that contain "regular"
-            const regularCandidates = candidates.filter(k => k.toLowerCase().includes('regular'));
-            if (regularCandidates.length > 0) {
-                // Among "regular" candidates, prefer the shortest name (usually base style)
-                regularCandidates.sort((a, b) => a.length - b.length);
-                fallbackKey = regularCandidates[0];
-            } else {
-                // Otherwise prefer the shortest candidate name overall
-                candidates.sort((a, b) => a.length - b.length);
-                fallbackKey = candidates[0];
-            }
-        } else {
-            // Fallback to more generic heuristics if no normalized prefix matches are found
-            // Try exact case-insensitive match first
-            fallbackKey = allFamilies.find(key => key.toLowerCase() === requested);
-
-            // Then try partial match
-            if (!fallbackKey) {
-                fallbackKey = allFamilies.find(key => key.toLowerCase().includes(requested));
-            }
-        }
-
-        if (fallbackKey) {
-            resolvedFamily = fallbackKey;
-            familyDict = fontDictionary[resolvedFamily];
-            console.log(`Family '${family}' not found, using closest match '${resolvedFamily}'.`);
-        }
-    }
-
-    if (!familyDict) {
-        const scannedFamily = tryPopulateFamilyFromFallbackScan(family);
-        if (scannedFamily) {
-            resolvedFamily = scannedFamily;
-            familyDict = fontDictionary[resolvedFamily];
-            console.log(`Family '${family}' resolved from fallback scan as '${resolvedFamily}'.`);
-        }
+        rescanFontDirectories(`lookup miss for '${family}'`);
+        ({ resolvedFamily, familyDict } = resolveFamilyEntry(family));
     }
 
     if (!familyDict) {
