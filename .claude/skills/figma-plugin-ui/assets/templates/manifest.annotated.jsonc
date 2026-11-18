@@ -1,0 +1,92 @@
+// =============================================================================
+// FIGMA PLUGIN MANIFEST — ANNOTATED REFERENCE
+// Comments are for you; manifest.json itself must be strict JSON (no comments,
+// no trailing commas). Copy manifest.json or manifest.remote-fonts.json instead
+// of this file.
+// =============================================================================
+{
+  // Shown in the plugin list and in Community. Required.
+  "name": "Plugin name",
+
+  // Required. Figma assigns this the first time you create the plugin
+  // (Plugins > Development > New plugin…). Never invent or reuse another
+  // plugin's id — publishing fails, or you overwrite the wrong listing.
+  "id": "1234567890123456789",
+
+  // Required. Plugin API version. "1.0.0" is current.
+  "api": "1.0.0",
+
+  // Required. Main-thread bundle: full Figma API, no DOM.
+  "main": "dist/code.js",
+
+  // The UI iframe: ONE self-contained HTML file. Relative <link>/<script>
+  // never resolve from here, which is why build.mjs inlines everything.
+  // Omit this key entirely for a UI-less plugin.
+  "ui": "dist/ui.html",
+
+  // Where the plugin can run. Any of "figma", "figjam", "slides", "dev".
+  "editorType": ["figma"],
+
+  // "dynamic-page" is required for new plugins and unlocks
+  // figma.loadAllPagesAsync() / per-page lazy loading.
+  // "access" (the old whole-document model) is legacy.
+  "documentAccess": "dynamic-page",
+
+  // -------------------------------------------------------------------------
+  // REQUIRED TO PUBLISH. Declares every origin the plugin may reach, from the
+  // main thread AND from the UI iframe (CSS, fonts, images, fetch, XHR,
+  // WebSocket, <iframe src>). Figma blocks anything not listed, with a CSP
+  // error in the console.
+  // -------------------------------------------------------------------------
+  "networkAccess": {
+    // Either the literal ["none"] (no network at all — the right answer when
+    // fonts and assets are inlined as data: URIs) or an explicit list.
+    // Scheme-qualified origins. "https://*.example.com" matches subdomains.
+    // "*" matches everything and makes "reasoning" mandatory; reviewers push
+    // back on it, so list real origins.
+    "allowedDomains": ["none"],
+
+    // Optional. Extra origins allowed ONLY while the plugin runs from
+    // Plugins > Development. The place for http://localhost:PORT.
+    "devAllowedDomains": ["http://localhost:3000"],
+
+    // User-facing sentence explaining the access. Required when allowedDomains
+    // contains a "*" wildcard; always worth writing, since it is what the
+    // review team reads.
+    "reasoning": "Explain, in one sentence, what the plugin fetches and why."
+  },
+
+  // Optional: "currentuser" (figma.currentUser), "activeusers",
+  // "fileusers", "payments", "teamlibrary".
+  // Each one is reviewed, so request nothing you do not call.
+  "permissions": [],
+
+  // Optional. "textreview" | "codegen" | "inspect" | "vscode".
+  "capabilities": [],
+
+  // Optional. Submenu entries; each command is readable as
+  // figma.command in code.js.
+  "menu": [
+    { "name": "Open", "command": "open" },
+    { "separator": true },
+    { "name": "Settings…", "command": "settings" }
+  ],
+
+  // Optional. Buttons in the right-hand panel for nodes the plugin touched
+  // (set node.setRelaunchData({ edit: "" })).
+  "relaunchButtons": [
+    { "command": "edit", "name": "Edit with Plugin name" }
+  ],
+
+  // Optional. Prompt-style input before the UI opens.
+  "parameters": [
+    { "name": "Query", "key": "query", "allowFreeform": true, "optional": true }
+  ],
+  "parameterOnly": false,
+
+  // Never ship this true — proposed APIs are blocked outside development.
+  "enableProposedApi": false
+
+  // Optional "build": a shell command Figma runs on import/reload. Handy
+  // during development: "build": "node build.mjs"
+}

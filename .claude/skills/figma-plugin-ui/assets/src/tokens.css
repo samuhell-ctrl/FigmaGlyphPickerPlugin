@@ -1,0 +1,214 @@
+/* =============================================================================
+   PLUGIN UI KIT — TOKENS
+   Single source of truth. Components never hardcode a value.
+   Prefix: --k-*  (never collides with Figma's injected --figma-color-*)
+
+   Theme resolution order (handled by kit.js):
+     1. body[data-theme="dark"|"light"]   <- explicit, user toggle / clientStorage
+     2. html.figma-dark / html.figma-light <- Figma native, needs themeColors:true
+     3. prefers-color-scheme               <- fallback when opened outside Figma
+   ============================================================================= */
+
+:root {
+  /* ---------- Scale ---------------------------------------------------------
+     One number drives the whole UI. Figma panels are physically small; 1.0 is
+     Figma-native density, 1.2–1.35 reads better for glyph/preview-heavy tools. */
+  --k-scale: 1;
+
+  /* ---------- Layout ------------------------------------------------------- */
+  --k-pad-x: 0.75rem;
+  --k-pad-y: 0.75rem;
+  --k-gap-xs: 0.25rem;
+  --k-gap-sm: 0.5rem;
+  --k-gap-md: 0.75rem;
+  --k-gap-lg: 1.25rem;
+  --k-radius-sm: 4px;
+  --k-radius-md: 5px;
+  --k-radius-lg: 8px;
+  --k-radius-pill: 999px;
+  --k-row-h: 2rem;          /* inputs, buttons, select, list rows */
+  --k-row-h-sm: 1.625rem;
+  --k-hairline: 1px;
+
+  /* ---------- Typography ---------------------------------------------------
+     Swap --k-font-ui for your embedded face. See src/fonts.css + README. */
+  --k-font-ui: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    system-ui, "Segoe UI", sans-serif;
+  --k-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --k-text-xs: 0.6875rem;   /* 11px — Figma's own UI size */
+  --k-text-sm: 0.75rem;     /* 12px — kit default */
+  --k-text-md: 0.8125rem;   /* 13px — titles */
+  --k-text-lg: 1rem;
+  --k-weight-regular: 400;
+  --k-weight-medium: 500;
+  --k-weight-strong: 600;
+  --k-leading: 1.35;
+  --k-tracking-caps: 0.04em;
+
+  /* ---------- Motion ------------------------------------------------------- */
+  --k-dur-fast: 0.12s;
+  --k-dur: 0.2s;
+  --k-dur-slow: 0.32s;
+  --k-ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --k-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---------- Elevation ---------------------------------------------------- */
+  --k-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --k-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --k-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.28);
+
+  /* ---------- Accent (brand) ----------------------------------------------
+     Only token you normally rebrand per plugin. */
+  --k-accent: #0d99ff;
+  --k-accent-hover: #0b84e0;
+  --k-accent-fg: #ffffff;
+  --k-accent-soft: rgba(13, 153, 255, 0.12);
+
+  /* ================= LIGHT (default) ===================================== */
+  --k-bg: #ffffff;
+  --k-bg-raised: #ffffff;
+  --k-bg-sunken: rgba(0, 0, 0, 0.03);
+  --k-bg-hover: rgba(0, 0, 0, 0.055);
+  --k-bg-active: rgba(0, 0, 0, 0.09);
+  --k-bg-selected: var(--k-accent-soft);
+
+  --k-fg: #000000;
+  --k-fg-secondary: rgba(0, 0, 0, 0.7);
+  --k-fg-muted: rgba(0, 0, 0, 0.45);
+  --k-fg-placeholder: rgba(0, 0, 0, 0.3);
+  --k-fg-ondisabled: rgba(0, 0, 0, 0.3);
+
+  --k-border: rgba(0, 0, 0, 0.1);
+  --k-border-strong: rgba(0, 0, 0, 0.22);
+  --k-divider: rgba(0, 0, 0, 0.06);
+
+  --k-field-bg: rgba(0, 0, 0, 0.03);
+  --k-field-bg-focus: #ffffff;
+  --k-field-border: #d6d6d6;
+
+  --k-focus-ring: rgba(13, 153, 255, 0.45);
+
+  --k-success: #0f9d58;
+  --k-success-soft: rgba(15, 157, 88, 0.12);
+  --k-warning: #a16207;
+  --k-warning-soft: rgba(250, 204, 21, 0.2);
+  --k-danger: #d93025;
+  --k-danger-soft: rgba(217, 48, 37, 0.1);
+  --k-info: #004cff;
+  --k-info-soft: rgba(21, 82, 250, 0.15);
+
+  --k-scroll-thumb: rgba(0, 0, 0, 0.25);
+  --k-scrim: rgba(0, 0, 0, 0.45);
+  --k-glass-bg: rgba(255, 255, 255, 0.9);
+  --k-glass-border: rgba(0, 0, 0, 0.08);
+
+  color-scheme: light;
+}
+
+/* ================= DARK ================================================== */
+/* Explicit (toggle / stored preference) */
+body[data-theme="dark"],
+/* Figma native, requires figma.showUI(__html__, { themeColors: true }) */
+html.figma-dark body:not([data-theme="light"]) {
+  --k-bg: #1e1e1e;
+  --k-bg-raised: #2c2c2c;
+  --k-bg-sunken: rgba(255, 255, 255, 0.04);
+  --k-bg-hover: rgba(255, 255, 255, 0.08);
+  --k-bg-active: rgba(255, 255, 255, 0.12);
+  --k-bg-selected: rgba(13, 153, 255, 0.22);
+
+  --k-fg: #ffffff;
+  --k-fg-secondary: rgba(255, 255, 255, 0.8);
+  --k-fg-muted: rgba(255, 255, 255, 0.45);
+  --k-fg-placeholder: rgba(255, 255, 255, 0.3);
+  --k-fg-ondisabled: rgba(255, 255, 255, 0.3);
+
+  --k-border: rgba(255, 255, 255, 0.12);
+  --k-border-strong: rgba(255, 255, 255, 0.3);
+  --k-divider: rgba(255, 255, 255, 0.1);
+
+  --k-field-bg: rgba(255, 255, 255, 0.05);
+  --k-field-bg-focus: rgba(255, 255, 255, 0.08);
+  --k-field-border: #383838;
+
+  --k-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --k-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --k-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6);
+
+  --k-success: #4ade80;
+  --k-success-soft: rgba(74, 222, 128, 0.15);
+  --k-warning: #fbbf24;
+  --k-warning-soft: rgba(251, 191, 36, 0.15);
+  --k-danger: #f87171;
+  --k-danger-soft: rgba(248, 113, 113, 0.14);
+  --k-info: #8baeff;
+  --k-info-soft: rgba(21, 82, 250, 0.18);
+
+  --k-scroll-thumb: rgba(255, 255, 255, 0.22);
+  --k-scrim: rgba(0, 0, 0, 0.7);
+  --k-glass-bg: rgba(40, 40, 40, 0.88);
+  --k-glass-border: rgba(255, 255, 255, 0.12);
+
+  color-scheme: dark;
+}
+
+/* Outside Figma (gallery, browser preview) with no explicit choice */
+@media (prefers-color-scheme: dark) {
+  html:not(.figma-light):not(.figma-dark) body:not([data-theme]):not([data-theme="light"]) {
+    --k-bg: #1e1e1e;
+    --k-bg-raised: #2c2c2c;
+    --k-bg-sunken: rgba(255, 255, 255, 0.04);
+    --k-bg-hover: rgba(255, 255, 255, 0.08);
+    --k-bg-active: rgba(255, 255, 255, 0.12);
+    --k-bg-selected: rgba(13, 153, 255, 0.22);
+    --k-fg: #ffffff;
+    --k-fg-secondary: rgba(255, 255, 255, 0.8);
+    --k-fg-muted: rgba(255, 255, 255, 0.45);
+    --k-fg-placeholder: rgba(255, 255, 255, 0.3);
+    --k-fg-ondisabled: rgba(255, 255, 255, 0.3);
+    --k-border: rgba(255, 255, 255, 0.12);
+    --k-border-strong: rgba(255, 255, 255, 0.3);
+    --k-divider: rgba(255, 255, 255, 0.1);
+    --k-field-bg: rgba(255, 255, 255, 0.05);
+    --k-field-bg-focus: rgba(255, 255, 255, 0.08);
+    --k-field-border: #383838;
+    --k-success: #4ade80;
+    --k-warning: #fbbf24;
+    --k-danger: #f87171;
+    --k-info: #8baeff;
+    --k-scroll-thumb: rgba(255, 255, 255, 0.22);
+    --k-scrim: rgba(0, 0, 0, 0.7);
+    --k-glass-bg: rgba(40, 40, 40, 0.88);
+    --k-glass-border: rgba(255, 255, 255, 0.12);
+    color-scheme: dark;
+  }
+}
+
+/* OPTIONAL: inherit the user's exact Figma theme instead of the kit palette.
+   Add class="k-native" to <body>. Requires themeColors:true. */
+body.k-native {
+  --k-bg: var(--figma-color-bg, var(--k-bg));
+  --k-bg-raised: var(--figma-color-bg-secondary, var(--k-bg-raised));
+  --k-bg-sunken: var(--figma-color-bg-secondary, var(--k-bg-sunken));
+  --k-bg-hover: var(--figma-color-bg-hover, var(--k-bg-hover));
+  --k-bg-selected: var(--figma-color-bg-selected, var(--k-bg-selected));
+  --k-fg: var(--figma-color-text, var(--k-fg));
+  --k-fg-secondary: var(--figma-color-text-secondary, var(--k-fg-secondary));
+  --k-fg-muted: var(--figma-color-text-tertiary, var(--k-fg-muted));
+  --k-border: var(--figma-color-border, var(--k-border));
+  --k-accent: var(--figma-color-bg-brand, var(--k-accent));
+  --k-danger: var(--figma-color-text-danger, var(--k-danger));
+}
+
+/* Theme swap must not animate — kit.js adds this class for one frame. */
+.k-no-transitions,
+.k-no-transitions * {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

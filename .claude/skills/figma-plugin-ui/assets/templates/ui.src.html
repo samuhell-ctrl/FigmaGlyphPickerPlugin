@@ -1,0 +1,170 @@
+<!doctype html>
+<!-- =============================================================================
+     PLUGIN UI — STARTER
+     Build with:  node build.mjs      ->  dist/ui.html
+     Point manifest.json "ui" at the BUILT file, never at this source.
+     ============================================================================= -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<!-- kit:include src/tokens.css -->
+<!-- kit:include src/fonts.css -->
+<!-- kit:include src/components.css -->
+
+<style>
+  /* ---- Per-plugin overrides. Keep everything else in the kit. ---- */
+  :root {
+    --k-scale: 1;
+    --k-accent: #0d99ff;
+    --k-grid-cols: 5;
+  }
+</style>
+</head>
+
+<body>
+<!-- kit:include src/icons.html -->
+
+<div class="k-app">
+
+  <header class="k-header k-stack-sm">
+    <div class="k-row k-row--between">
+      <span class="k-title">Plugin name</span>
+      <div class="k-row">
+        <span class="k-badge" id="version">v1.0.0</span>
+        <label class="k-switch" data-tip="Dark mode">
+          <input type="checkbox" data-kit="theme-switch" aria-label="Dark mode">
+        </label>
+      </div>
+    </div>
+
+    <div class="k-search" id="search">
+      <svg class="k-search__icon"><use href="#i-search"></use></svg>
+      <input class="k-input" type="text" placeholder="Search…" spellcheck="false" autocomplete="off">
+      <button class="k-btn k-btn--icon k-btn--sm k-search__clear" data-kit="search-clear" aria-label="Clear">
+        <svg class="k-icon"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+
+    <div class="k-segment k-segment--block" id="tabs" role="tablist">
+      <button class="k-segment__item" role="tab" data-value="all" aria-selected="true">All</button>
+      <button class="k-segment__item" role="tab" data-value="recent" aria-selected="false">Recent</button>
+      <button class="k-segment__item" role="tab" data-value="favorites" aria-selected="false">Favorites</button>
+    </div>
+  </header>
+
+  <main class="k-scroll k-stack" id="content">
+    <div class="k-meta-row">
+      <span class="k-label">Items</span>
+      <span class="k-value" id="count">0</span>
+    </div>
+    <div class="k-grid" id="grid"></div>
+    <p class="k-status" id="status"></p>
+  </main>
+
+  <footer class="k-footer k-row k-row--between">
+    <span class="k-caption" id="hint">Select a layer to begin</span>
+    <button class="k-btn k-btn--primary k-btn--sm" id="apply">Apply</button>
+  </footer>
+
+</div>
+
+<!-- Modal: one per dialog, driven by K.modal() -->
+<div class="k-modal" id="settings-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="k-modal__card">
+    <div class="k-modal__header">
+      <span class="k-title">Settings</span>
+      <button class="k-btn k-btn--icon k-btn--sm" data-kit="modal-close" aria-label="Close">
+        <svg class="k-icon"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="k-modal__body k-stack-sm">
+      <label class="k-check"><input type="checkbox" checked> <span>Remember last selection</span></label>
+      <div class="k-field">
+        <span class="k-label">UI scale</span>
+        <input class="k-range" type="range" min="0.9" max="1.5" step="0.05" value="1" id="scale">
+      </div>
+    </div>
+    <div class="k-modal__footer">
+      <button class="k-btn k-btn--secondary k-btn--sm" data-kit="modal-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- kit:include src/kit.js -->
+<script>
+/* ============================ PLUGIN UI LOGIC ============================ */
+K.init();
+
+const grid     = document.getElementById("grid");
+const countEl  = document.getElementById("count");
+const statusEl = document.getElementById("status");
+const settings = K.modal("#settings-modal");
+
+let items = [];
+let query = "";
+let tab   = "all";
+
+/* ---- Rendering ---- */
+function render() {
+  const q = query.trim().toLowerCase();
+  const visible = items.filter((it) =>
+    (tab === "all" || it.tags?.includes(tab)) && (!q || it.name.toLowerCase().includes(q))
+  );
+
+  countEl.textContent = visible.length;
+
+  if (!visible.length) {
+    grid.innerHTML = "";
+    grid.insertAdjacentHTML("afterbegin", `
+      <div class="k-empty" style="grid-column:1/-1">
+        <span class="k-empty__title">Nothing here</span>
+        <span class="k-empty__body">${q ? "No match for “" + q + "”." : "Run the plugin on a selection to load items."}</span>
+      </div>`);
+    return;
+  }
+
+  grid.innerHTML = visible.map((it, i) => `
+    <button class="k-cell" data-index="${i}" data-tip="${it.name}" aria-selected="false">
+      ${it.svg || `<span>${it.label ?? ""}</span>`}
+    </button>`).join("");
+}
+
+/* ---- Wiring ---- */
+K.search("#search", (value) => { query = value; render(); });
+K.segment("#tabs", (value) => { tab = value; render(); });
+
+K.delegate("click", ".k-cell", (_, cell) => {
+  grid.querySelectorAll(".k-cell").forEach((c) => c.setAttribute("aria-selected", String(c === cell)));
+  K.send("item:pick", { index: Number(cell.dataset.index) });
+});
+
+document.getElementById("apply").addEventListener("click", (e) => {
+  K.loading(e.currentTarget, true);
+  K.send("apply", { tab, query });
+});
+
+document.getElementById("scale").addEventListener("change", (e) => K.scale(Number(e.target.value)));
+
+/* ---- Messages from code.js ---- */
+K.on("items", (payload) => { items = payload.items ?? []; render(); });
+
+K.on("status", ({ text, tone }) => {
+  statusEl.textContent = text ?? "";
+  if (tone) statusEl.dataset.tone = tone; else delete statusEl.dataset.tone;
+});
+
+K.on("done", ({ message }) => {
+  K.loading("#apply", false);
+  K.toast(message ?? "Done", { tone: "success" });
+});
+
+K.on("error", ({ message }) => {
+  K.loading("#apply", false);
+  K.toast(message ?? "Something went wrong", { tone: "danger", duration: 3200 });
+});
+
+render();
+</script>
+</body>
+</html>
