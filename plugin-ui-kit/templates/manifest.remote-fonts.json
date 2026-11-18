@@ -1,0 +1,21 @@
+{
+  "name": "Plugin name",
+  "id": "REPLACE_WITH_ID_FROM_FIGMA",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com"
+    ],
+    "devAllowedDomains": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com",
+      "http://localhost:3000"
+    ],
+    "reasoning": "Loads the plugin interface typeface from Google Fonts."
+  }
+}

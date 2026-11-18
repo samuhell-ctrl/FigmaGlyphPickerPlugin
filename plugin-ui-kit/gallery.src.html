@@ -1,0 +1,344 @@
+<!doctype html>
+<!-- =============================================================================
+     PLUGIN UI KIT — COMPONENT GALLERY
+     node build.mjs  ->  dist/gallery.html   (open it in a browser)
+     Every specimen is copy-paste ready. Toggle theme, scale and panel width to
+     check a component before you commit to it.
+     ============================================================================= -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plugin UI Kit</title>
+
+<!-- kit:include src/tokens.css -->
+<!-- kit:include src/components.css -->
+
+<style>
+  /* Gallery chrome only — not part of the kit. */
+  body { overflow: auto; height: auto; }
+  .g-bar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    padding: 0.625rem 1rem;
+    background: var(--k-bg);
+    border-bottom: 1px solid var(--k-divider);
+  }
+  .g-bar__title { font-weight: var(--k-weight-strong); font-size: var(--k-text-md); margin-right: auto; }
+  .g-wrap { display: flex; justify-content: center; padding: 1.5rem 1rem 6rem; }
+  .g-panel {
+    width: var(--g-width, 300px);
+    border: 1px solid var(--k-border);
+    border-radius: var(--k-radius-lg);
+    background: var(--k-bg);
+    box-shadow: var(--k-shadow-md);
+    overflow: hidden;
+  }
+  .g-panel__inner { padding: calc(var(--k-pad-y) * var(--k-scale)) calc(var(--k-pad-x) * var(--k-scale)); }
+  .g-sec { padding: 1rem 0; border-bottom: 1px solid var(--k-divider); }
+  .g-sec:last-child { border-bottom: 0; }
+  .g-sec > h2 {
+    margin: 0 0 0.625rem;
+    font-size: var(--k-text-xs);
+    font-weight: var(--k-weight-strong);
+    letter-spacing: var(--k-tracking-caps);
+    text-transform: uppercase;
+    color: var(--k-fg-muted);
+  }
+  .g-grp { display: flex; flex-direction: column; gap: 0.5rem; }
+  .g-note { font-size: 0.625rem; color: var(--k-fg-muted); }
+</style>
+</head>
+
+<body>
+<!-- kit:include src/icons.html -->
+
+<div class="g-bar">
+  <span class="g-bar__title">Plugin UI Kit</span>
+
+  <div class="k-segment" id="g-width">
+    <button class="k-segment__item" data-value="240">240</button>
+    <button class="k-segment__item" data-value="300" aria-selected="true">300</button>
+    <button class="k-segment__item" data-value="360">360</button>
+    <button class="k-segment__item" data-value="420">420</button>
+  </div>
+
+  <label class="k-row k-caption">scale
+    <input class="k-range" type="range" min="0.9" max="1.4" step="0.05" value="1" id="g-scale" style="width:90px">
+    <span id="g-scale-val" class="k-mono">1.00</span>
+  </label>
+
+  <label class="k-switch" data-tip="Dark mode">
+    <input type="checkbox" data-kit="theme-switch" aria-label="Dark mode">
+  </label>
+</div>
+
+<div class="g-wrap">
+<div class="g-panel" id="g-panel">
+<div class="g-panel__inner">
+
+  <!-- ============================ TYPOGRAPHY ============================ -->
+  <section class="g-sec">
+    <h2>Typography</h2>
+    <div class="g-grp">
+      <span class="k-title">Title — .k-title</span>
+      <div class="k-meta-row"><span class="k-label">Selected font</span><span class="k-value">Söhne Breit Kräftig</span></div>
+      <div class="k-meta-row"><span class="k-label">Total glyphs</span><span class="k-value">1,284</span></div>
+      <span class="k-caption">Caption — .k-caption</span>
+      <span class="k-section-title">Section — .k-section-title</span>
+      <span class="k-mono k-selectable">.k-mono U+E0A1 — selectable</span>
+    </div>
+  </section>
+
+  <!-- ============================== BUTTONS ============================= -->
+  <section class="g-sec">
+    <h2>Buttons</h2>
+    <div class="g-grp">
+      <div class="k-row k-row--wrap">
+        <button class="k-btn k-btn--primary">Primary</button>
+        <button class="k-btn">Default</button>
+        <button class="k-btn k-btn--secondary">Secondary</button>
+        <button class="k-btn k-btn--ghost">Ghost</button>
+      </div>
+      <div class="k-row k-row--wrap">
+        <button class="k-btn k-btn--danger k-btn--sm">Delete</button>
+        <button class="k-btn k-btn--sm" disabled>Disabled</button>
+        <button class="k-btn k-btn--primary k-btn--sm" id="g-load">Load</button>
+        <button class="k-btn k-btn--icon" data-tip="Settings"><svg class="k-icon"><use href="#i-settings"></use></svg></button>
+        <button class="k-btn k-btn--icon" data-tip="Refresh"><svg class="k-icon"><use href="#i-refresh"></use></svg></button>
+      </div>
+      <button class="k-btn k-btn--primary k-btn--block">
+        <svg class="k-icon"><use href="#i-plus"></use></svg> Block button
+      </button>
+    </div>
+  </section>
+
+  <!-- =============================== FIELDS ============================= -->
+  <section class="g-sec">
+    <h2>Fields</h2>
+    <div class="g-grp">
+      <div class="k-search" id="g-search">
+        <svg class="k-search__icon"><use href="#i-search"></use></svg>
+        <input class="k-input" type="text" placeholder="Search glyphs…" spellcheck="false">
+        <button class="k-btn k-btn--icon k-btn--sm k-search__clear" data-kit="search-clear" aria-label="Clear">
+          <svg class="k-icon"><use href="#i-close"></use></svg>
+        </button>
+      </div>
+      <div class="k-field">
+        <span class="k-label">Label</span>
+        <input class="k-input" type="text" value="Editable value">
+      </div>
+      <div class="k-field">
+        <span class="k-label">Invalid</span>
+        <input class="k-input" type="text" value="not-a-number" aria-invalid="true">
+        <span class="k-status" data-tone="danger">Enter a number.</span>
+      </div>
+      <select class="k-select">
+        <option>Regular</option><option>Medium</option><option>Semibold</option>
+      </select>
+      <textarea class="k-textarea" placeholder="Multi-line…"></textarea>
+      <div class="k-row">
+        <span class="k-label k-grow">Size</span>
+        <div class="k-stepper">
+          <button class="k-btn k-btn--sm"><svg class="k-icon"><use href="#i-minus"></use></svg></button>
+          <input class="k-input" value="24">
+          <button class="k-btn k-btn--sm"><svg class="k-icon"><use href="#i-plus"></use></svg></button>
+        </div>
+      </div>
+      <input class="k-range" type="range" min="0" max="100" value="45">
+    </div>
+  </section>
+
+  <!-- ============================= CONTROLS ============================= -->
+  <section class="g-sec">
+    <h2>Controls</h2>
+    <div class="g-grp">
+      <label class="k-check"><input type="checkbox" checked><span>Checkbox, checked</span></label>
+      <label class="k-check"><input type="checkbox"><span>Checkbox</span></label>
+      <label class="k-check"><input type="radio" name="g-r" checked><span>Radio A</span></label>
+      <label class="k-check"><input type="radio" name="g-r"><span>Radio B</span></label>
+      <div class="k-row k-row--between">
+        <span class="k-label">Switch</span>
+        <label class="k-switch"><input type="checkbox" checked></label>
+      </div>
+      <div class="k-segment k-segment--block" id="g-seg">
+        <button class="k-segment__item" data-value="a" aria-selected="true">Glyphs</button>
+        <button class="k-segment__item" data-value="b">Features</button>
+        <button class="k-segment__item" data-value="c">Sets</button>
+      </div>
+      <div class="k-tabs" id="g-tabs">
+        <button class="k-tabs__item" data-value="x" aria-selected="true">Library</button>
+        <button class="k-tabs__item" data-value="y">Local</button>
+        <button class="k-tabs__item" data-value="z">Recent</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== CELLS =============================== -->
+  <section class="g-sec">
+    <h2>Cell grid</h2>
+    <div class="k-grid" style="--k-grid-cols:5" id="g-grid"></div>
+    <p class="k-caption" style="margin:.5rem 0 0">Click to select · <span class="k-kbd">↑</span><span class="k-kbd">↓</span> to walk</p>
+  </section>
+
+  <!-- =============================== LIST =============================== -->
+  <section class="g-sec">
+    <h2>List</h2>
+    <div class="k-list">
+      <div class="k-list__row" aria-selected="true">
+        <svg class="k-icon" style="width:13px;height:13px"><use href="#i-type"></use></svg>
+        <span class="k-truncate">Söhne Breit</span><span class="k-list__meta">412</span>
+      </div>
+      <div class="k-list__row">
+        <svg class="k-icon" style="width:13px;height:13px"><use href="#i-type"></use></svg>
+        <span class="k-truncate">Helvetica Neue LT Std Condensed</span><span class="k-list__meta">1,120</span>
+      </div>
+      <div class="k-list__row">
+        <svg class="k-icon" style="width:13px;height:13px"><use href="#i-type"></use></svg>
+        <span class="k-truncate">GT Sectra Fine</span><span class="k-list__meta">268</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ FEEDBACK ============================== -->
+  <section class="g-sec">
+    <h2>Feedback</h2>
+    <div class="g-grp">
+      <div class="k-row k-row--wrap">
+        <span class="k-badge">Neutral</span>
+        <span class="k-badge k-badge--info">v1.1.4</span>
+        <span class="k-badge k-badge--success k-badge--dot">Connected</span>
+        <span class="k-badge k-badge--warning">Dev</span>
+        <span class="k-badge k-badge--danger">Offline</span>
+      </div>
+      <div class="k-banner k-banner--info">
+        <svg class="k-icon"><use href="#i-info"></use></svg>
+        <span>Companion app found on port 3000.</span>
+      </div>
+      <div class="k-banner k-banner--warning">
+        <svg class="k-icon"><use href="#i-warning"></use></svg>
+        <span>Font has no stylistic sets.</span>
+      </div>
+      <div class="k-banner k-banner--danger">
+        <svg class="k-icon"><use href="#i-warning"></use></svg>
+        <span>Server not reachable. Start the app and retry.</span>
+      </div>
+      <div class="k-progress" id="g-prog"><div class="k-progress__bar" style="width:38%"></div></div>
+      <div class="k-progress k-progress--indeterminate"><div class="k-progress__bar"></div></div>
+      <div class="k-row"><div class="k-spinner"></div><span class="k-caption">Scanning system fonts…</span></div>
+      <div class="k-row k-row--wrap">
+        <button class="k-btn k-btn--sm" data-toast="Copied to clipboard">Toast</button>
+        <button class="k-btn k-btn--sm" data-toast="Inserted 24 glyphs" data-tone="success">Success</button>
+        <button class="k-btn k-btn--sm" data-toast="Could not read font file" data-tone="danger">Error</button>
+        <button class="k-btn k-btn--sm" id="g-modal-open">Modal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== STATES ============================== -->
+  <section class="g-sec">
+    <h2>States</h2>
+    <div class="g-grp">
+      <div class="k-grid" style="--k-grid-cols:5">
+        <div class="k-skeleton k-skeleton--cell"></div><div class="k-skeleton k-skeleton--cell"></div>
+        <div class="k-skeleton k-skeleton--cell"></div><div class="k-skeleton k-skeleton--cell"></div>
+        <div class="k-skeleton k-skeleton--cell"></div>
+      </div>
+      <div class="k-skeleton k-skeleton--text" style="width:70%"></div>
+      <div class="k-empty">
+        <svg class="k-icon" style="width:20px;height:20px;color:var(--k-fg-muted)"><use href="#i-search"></use></svg>
+        <span class="k-empty__title">No glyphs found</span>
+        <span class="k-empty__body">Try a different search term or pick another weight.</span>
+      </div>
+      <div class="k-drop" id="g-drop">
+        <strong>Drop a font file</strong>
+        <span>.otf, .ttf or .woff2</span>
+      </div>
+      <details class="k-collapse">
+        <summary>Advanced</summary>
+        <div class="k-collapse__body k-stack-sm">
+          <label class="k-check"><input type="checkbox"><span>Include private-use area</span></label>
+          <label class="k-check"><input type="checkbox"><span>Outline instead of fill</span></label>
+        </div>
+      </details>
+    </div>
+  </section>
+
+</div>
+</div>
+</div>
+
+<div class="k-modal" id="g-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Stylistic sets">
+  <div class="k-modal__card">
+    <div class="k-modal__header">
+      <span class="k-title">Stylistic sets</span>
+      <button class="k-btn k-btn--icon k-btn--sm" data-kit="modal-close" aria-label="Close">
+        <svg class="k-icon"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="k-modal__body k-stack-sm">
+      <label class="k-check"><input type="checkbox" checked><span>ss01 — Alternate a</span></label>
+      <label class="k-check"><input type="checkbox"><span>ss02 — Single-storey g</span></label>
+      <label class="k-check"><input type="checkbox"><span>dlig — Discretionary ligatures</span></label>
+    </div>
+    <div class="k-modal__footer">
+      <button class="k-btn k-btn--secondary k-btn--sm" data-kit="modal-close">Cancel</button>
+      <button class="k-btn k-btn--primary k-btn--sm" data-kit="modal-close">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- kit:include src/kit.js -->
+<script>
+K.init();
+
+/* Panel width + scale */
+K.segment("#g-width", (v) => document.getElementById("g-panel").style.setProperty("--g-width", v + "px"));
+const scale = document.getElementById("g-scale");
+scale.addEventListener("input", () => {
+  document.documentElement.style.setProperty("--k-scale", scale.value);
+  document.getElementById("g-scale-val").textContent = Number(scale.value).toFixed(2);
+});
+
+/* Specimens */
+K.search("#g-search");
+K.segment("#g-seg");
+K.segment("#g-tabs");
+K.modal("#g-modal");
+document.getElementById("g-modal-open").addEventListener("click", () => K.modal("#g-modal").open());
+
+K.delegate("click", "[data-toast]", (_, el) =>
+  K.toast(el.dataset.toast, { tone: el.dataset.tone })
+);
+
+document.getElementById("g-load").addEventListener("click", (e) => {
+  K.loading(e.currentTarget, true);
+  setTimeout(() => K.loading(e.currentTarget, false), 1400);
+});
+
+/* Cell grid */
+const glyphs = ["A","a","&","@","Æ","ß","fi","ø","№","§","†","‡","¶","∞","≈","μ","π","Ω","∆","◊"];
+document.getElementById("g-grid").innerHTML = glyphs
+  .map((g, i) => `<button class="k-cell" data-tip="U+00${(65 + i).toString(16).toUpperCase()}" aria-selected="${i === 0}">
+    <span style="font-size:calc(1.125rem * var(--k-scale))">${g}</span>
+  </button>`).join("");
+
+K.delegate("click", "#g-grid .k-cell", (_, cell) => {
+  cell.parentElement.querySelectorAll(".k-cell").forEach((c) => c.setAttribute("aria-selected", String(c === cell)));
+});
+
+/* Drop zone */
+const drop = document.getElementById("g-drop");
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("is-over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, () => drop.classList.remove("is-over")));
+
+/* Progress demo */
+let p = 0.38;
+setInterval(() => { p = (p + 0.07) % 1; K.progress("#g-prog", p); }, 900);
+
+/* Rows */
+K.delegate("click", ".k-list__row", (_, row) => {
+  row.parentElement.querySelectorAll(".k-list__row").forEach((r) => r.setAttribute("aria-selected", String(r === row)));
+});
+</script>
+</body>
+</html>
